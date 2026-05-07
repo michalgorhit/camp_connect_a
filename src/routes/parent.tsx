@@ -25,7 +25,7 @@ export const Route = createFileRoute("/parent")({
 });
 
 type Kid = {
-  id: string; full_name: string; birth_date: string | null;
+  id: string; full_name: string; grade: string | null;
   school_id: string | null; class_id: string | null;
   share_with_class: boolean;
 };
@@ -328,7 +328,7 @@ function KidDialog({
 }: { open: boolean; onOpenChange: (v: boolean) => void; editing: Kid | null; schools: School[]; classes: Klass[]; onSaved: () => void }) {
   const { user } = useAuth();
   const [name, setName] = useState("");
-  const [birth, setBirth] = useState("");
+  const [grade, setGrade] = useState("");
   const [schoolName, setSchoolName] = useState("");
   const [className, setClassName] = useState("");
   const [shareClass, setShareClass] = useState(false);
@@ -338,12 +338,12 @@ function KidDialog({
     if (!open) return;
     if (editing) {
       setName(editing.full_name);
-      setBirth(editing.birth_date ?? "");
+      setGrade(editing.grade ?? "");
       setSchoolName(schools.find((s) => s.id === editing.school_id)?.name ?? "");
       setClassName(classes.find((c) => c.id === editing.class_id)?.name ?? "");
       setShareClass(editing.share_with_class);
     } else {
-      setName(""); setBirth(""); setSchoolName(""); setClassName(""); setShareClass(false);
+      setName(""); setGrade(""); setSchoolName(""); setClassName(""); setShareClass(false);
     }
   }, [open, editing]);
 
@@ -382,7 +382,7 @@ function KidDialog({
       const payload = {
         parent_id: user.id,
         full_name: name,
-        birth_date: birth || null,
+        grade: grade.trim() || null,
         school_id: schoolId,
         class_id: classId,
         share_with_class: shareClass,
@@ -408,7 +408,7 @@ function KidDialog({
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div><Label>Full name</Label><Input required value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div><Label>Birth date</Label><Input type="date" value={birth} onChange={(e) => setBirth(e.target.value)} /></div>
+          <div><Label>Grade level</Label><Input value={grade} onChange={(e) => setGrade(e.target.value)} placeholder="e.g. Grade 3" /></div>
           <div className="relative">
             <Label>School</Label>
             <Input value={schoolName} onChange={(e) => setSchoolName(e.target.value)} placeholder="Type to search or create" />

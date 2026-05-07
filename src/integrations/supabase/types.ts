@@ -108,10 +108,10 @@ export type Database = {
       }
       kids: {
         Row: {
-          birth_date: string | null
           class_id: string | null
           created_at: string
           full_name: string
+          grade: string | null
           id: string
           notes: string | null
           parent_id: string
@@ -120,10 +120,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          birth_date?: string | null
           class_id?: string | null
           created_at?: string
           full_name: string
+          grade?: string | null
           id?: string
           notes?: string | null
           parent_id: string
@@ -132,10 +132,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          birth_date?: string | null
           class_id?: string | null
           created_at?: string
           full_name?: string
+          grade?: string | null
           id?: string
           notes?: string | null
           parent_id?: string
