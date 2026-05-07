@@ -217,6 +217,13 @@ function ParentDashboard() {
           session={pendingSession} kids={kids}
           onSaved={() => { setRegisterOpen(false); setPendingSession(null); load(); }}
         />
+
+        <KidShareDialog
+          open={!!shareKidId}
+          onOpenChange={(v) => { if (!v) setShareKidId(null); }}
+          kidId={shareKidId}
+          kidName={shareKidName}
+        />
       </main>
     </div>
   );
