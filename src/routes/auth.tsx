@@ -29,6 +29,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [businessLocation, setBusinessLocation] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user, refreshRoles } = useAuth();
