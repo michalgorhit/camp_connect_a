@@ -232,19 +232,48 @@ function RegRow({ reg, session, kidName, onChange }: { reg: Reg; session: Sess; 
     onChange();
   };
 
+  const setStatus = async (status: "interested" | "registered") => {
+    if (status === reg.status) return;
+    const { error } = await supabase.from("registrations").update({ status }).eq("id", reg.id);
+    if (error) return toast.error(error.message);
+    toast.success(status === "registered" ? "Marked as registered 🎉" : "Marked as interested");
+    onChange();
+  };
+
   return (
     <article className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 shadow-soft">
       <div>
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">{kidName}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">{kidName}</p>
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${reg.status === "registered" ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}>
+            {reg.status}
+          </span>
+        </div>
         <h3 className="font-display text-lg font-semibold">{session.title}</h3>
         <p className="text-sm text-muted-foreground">{new Date(session.start_date).toLocaleDateString()} – {new Date(session.end_date).toLocaleDateString()}</p>
       </div>
       <div className="flex flex-wrap gap-2">
+        <div className="inline-flex rounded-lg bg-muted p-1">
+          <button
+            type="button"
+            onClick={() => setStatus("interested")}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${reg.status === "interested" ? "bg-card shadow-soft" : "text-muted-foreground"}`}
+          >
+            Interested
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatus("registered")}
+            className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${reg.status === "registered" ? "bg-card shadow-soft" : "text-muted-foreground"}`}
+          >
+            Registered
+          </button>
+        </div>
         <Button size="sm" variant={reg.shared_with_class ? "sun" : "outline"} onClick={toggleShared}>
           <Users className="h-4 w-4" /> {reg.shared_with_class ? "Sharing with class" : "Share with class"}
         </Button>
         <Button size="sm" variant="outline" onClick={() => setShareOpen(true)}><Share2 className="h-4 w-4" /> Invite friend</Button>
-        {session.registration_url && (
+        {session.registration_url && reg.status !== "registered" && (
           <a href={session.registration_url} target="_blank" rel="noreferrer">
             <Button size="sm" variant="hero">Complete <ExternalLink className="h-3.5 w-3.5" /></Button>
           </a>
@@ -417,10 +446,11 @@ function RegisterDialog({
   const { user } = useAuth();
   const [kidId, setKidId] = useState<string>("");
   const [share, setShare] = useState(true);
+  const [status, setStatus] = useState<"interested" | "registered">("interested");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) { setKidId(kids[0]?.id ?? ""); setShare(true); }
+    if (open) { setKidId(kids[0]?.id ?? ""); setShare(true); setStatus("interested"); }
   }, [open, kids]);
 
   if (!session) return null;
@@ -430,11 +460,11 @@ function RegisterDialog({
     if (!user || !kidId) return;
     setSaving(true);
     const { error } = await supabase.from("registrations").upsert({
-      kid_id: kidId, session_id: session.id, parent_id: user.id, status: "interested", shared_with_class: share,
+      kid_id: kidId, session_id: session.id, parent_id: user.id, status, shared_with_class: share,
     }, { onConflict: "kid_id,session_id" });
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("Registered! Don't forget to complete on the camp's site.");
+    toast.success(status === "registered" ? "Marked as registered 🎉" : "Saved as interested");
     onSaved();
   };
 
@@ -442,7 +472,7 @@ function RegisterDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl">Register for {session.title}</DialogTitle>
+          <DialogTitle className="font-display text-2xl">Add to your camps: {session.title}</DialogTitle>
         </DialogHeader>
         {kids.length === 0 ? (
           <p className="text-muted-foreground">Add a kid first, then come back to register.</p>
@@ -454,20 +484,38 @@ function RegisterDialog({
                 {kids.map((k) => <option key={k.id} value={k.id}>{k.full_name}</option>)}
               </select>
             </div>
+            <div>
+              <Label>Status</Label>
+              <div className="mt-1 grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
+                <button type="button" onClick={() => setStatus("interested")}
+                  className={`rounded-md py-2 text-sm font-medium transition ${status === "interested" ? "bg-card shadow-soft" : "text-muted-foreground"}`}>
+                  Interested
+                </button>
+                <button type="button" onClick={() => setStatus("registered")}
+                  className={`rounded-md py-2 text-sm font-medium transition ${status === "registered" ? "bg-card shadow-soft" : "text-muted-foreground"}`}>
+                  Registered
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {status === "interested"
+                  ? "Save it for later — no commitment yet."
+                  : "You've completed the signup on the camp's site."}
+              </p>
+            </div>
             <label className="flex items-start gap-3 rounded-lg bg-muted p-3">
               <Checkbox checked={share} onCheckedChange={(v) => setShare(!!v)} className="mt-0.5" />
               <span className="text-sm">
                 <span className="font-medium">Share with classmates</span>
-                <span className="block text-muted-foreground">Other parents in their class will see this signup.</span>
+                <span className="block text-muted-foreground">Other parents in their class will see this.</span>
               </span>
             </label>
-            {session.registration_url && (
+            {session.registration_url && status === "interested" && (
               <p className="rounded-lg bg-accent/40 p-3 text-sm text-accent-foreground">
-                After confirming, you'll need to complete payment on the camp's website.
+                Don't forget to complete the signup on the camp's website when you're ready.
               </p>
             )}
             <DialogFooter>
-              <Button type="submit" variant="hero" disabled={saving}>{saving ? "Saving…" : "Confirm"}</Button>
+              <Button type="submit" variant="hero" disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
             </DialogFooter>
           </form>
         )}
