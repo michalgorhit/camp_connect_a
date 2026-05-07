@@ -382,7 +382,7 @@ function KidDialog({
       const payload = {
         parent_id: user.id,
         full_name: name,
-        birth_date: birth || null,
+        grade: grade.trim() || null,
         school_id: schoolId,
         class_id: classId,
         share_with_class: shareClass,
@@ -408,7 +408,7 @@ function KidDialog({
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div><Label>Full name</Label><Input required value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div><Label>Birth date</Label><Input type="date" value={birth} onChange={(e) => setBirth(e.target.value)} /></div>
+          <div><Label>Grade level</Label><Input value={grade} onChange={(e) => setGrade(e.target.value)} placeholder="e.g. Grade 3" /></div>
           <div className="relative">
             <Label>School</Label>
             <Input value={schoolName} onChange={(e) => setSchoolName(e.target.value)} placeholder="Type to search or create" />
