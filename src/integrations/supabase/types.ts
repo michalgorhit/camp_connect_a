@@ -272,7 +272,8 @@ export type Database = {
           id: string
           invitee_email: string
           inviter_id: string
-          registration_id: string
+          kid_id: string | null
+          registration_id: string | null
           token: string
         }
         Insert: {
@@ -281,7 +282,8 @@ export type Database = {
           id?: string
           invitee_email: string
           inviter_id: string
-          registration_id: string
+          kid_id?: string | null
+          registration_id?: string | null
           token?: string
         }
         Update: {
@@ -290,7 +292,8 @@ export type Database = {
           id?: string
           invitee_email?: string
           inviter_id?: string
-          registration_id?: string
+          kid_id?: string | null
+          registration_id?: string | null
           token?: string
         }
         Relationships: [
