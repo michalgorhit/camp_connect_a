@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           age_max: number | null
           age_min: number | null
+          available_spots: number | null
           capacity: number | null
           created_at: string
           description: string | null
@@ -28,7 +29,9 @@ export type Database = {
           location: string | null
           postal_code: string | null
           price_cents: number | null
+          registration_deadline: string | null
           registration_url: string | null
+          source_url: string | null
           start_date: string
           title: string
           updated_at: string
@@ -37,6 +40,7 @@ export type Database = {
         Insert: {
           age_max?: number | null
           age_min?: number | null
+          available_spots?: number | null
           capacity?: number | null
           created_at?: string
           description?: string | null
@@ -47,7 +51,9 @@ export type Database = {
           location?: string | null
           postal_code?: string | null
           price_cents?: number | null
+          registration_deadline?: string | null
           registration_url?: string | null
+          source_url?: string | null
           start_date: string
           title: string
           updated_at?: string
@@ -56,6 +62,7 @@ export type Database = {
         Update: {
           age_max?: number | null
           age_min?: number | null
+          available_spots?: number | null
           capacity?: number | null
           created_at?: string
           description?: string | null
@@ -66,7 +73,9 @@ export type Database = {
           location?: string | null
           postal_code?: string | null
           price_cents?: number | null
+          registration_deadline?: string | null
           registration_url?: string | null
+          source_url?: string | null
           start_date?: string
           title?: string
           updated_at?: string

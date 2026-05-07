@@ -15,6 +15,8 @@ type Session = {
   postal_code: string | null;
   start_date: string;
   end_date: string;
+  registration_deadline: string | null;
+  available_spots: number | null;
   price_cents: number | null;
   age_min: number | null;
   age_max: number | null;
@@ -109,6 +111,8 @@ function SessionCard({ s, canRegister }: { s: Session; canRegister: boolean }) {
           {(s.age_min || s.age_max) && (
             <li className="flex items-center gap-2"><Users className="h-4 w-4" /> Ages {s.age_min ?? "?"}–{s.age_max ?? "?"}</li>
           )}
+          {s.available_spots != null && <li>{s.available_spots} spots available</li>}
+          {s.registration_deadline && <li>Register by {new Date(s.registration_deadline).toLocaleDateString()}</li>}
         </ul>
         <div className="mt-5 flex items-center justify-between">
           <div className="font-display text-lg font-semibold">
