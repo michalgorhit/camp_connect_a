@@ -408,7 +408,19 @@ function KidDialog({
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div><Label>Full name</Label><Input required value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div><Label>Grade level</Label><Input value={grade} onChange={(e) => setGrade(e.target.value)} placeholder="e.g. Grade 3" /></div>
+          <div>
+            <Label>Grade level</Label>
+            <select
+              className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              value={grade}
+              onChange={(e) => setGrade(e.target.value)}
+            >
+              <option value="">Select a grade…</option>
+              {["Pre-K", "Kindergarten", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"].map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+          </div>
           <div className="relative">
             <Label>School</Label>
             <Input value={schoolName} onChange={(e) => setSchoolName(e.target.value)} placeholder="Type to search or create" />
