@@ -39,10 +39,13 @@ function AuthPage() {
 
   const ensureRole = async (uid: string, r: "parent" | "vendor") => {
     await supabase.from("user_roles").upsert({ user_id: uid, role: r }, { onConflict: "user_id,role" });
-    if (r === "vendor" && businessName) {
-      await supabase.from("profiles").update({ business_name: businessName }).eq("id", uid);
-    }
-    if (fullName) {
+    if (r === "vendor") {
+      await supabase.from("profiles").update({
+        business_name: businessName || null,
+        business_location: businessLocation || null,
+        full_name: businessName || null,
+      }).eq("id", uid);
+    } else if (fullName) {
       await supabase.from("profiles").update({ full_name: fullName }).eq("id", uid);
     }
   };
