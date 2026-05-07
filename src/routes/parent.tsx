@@ -149,6 +149,7 @@ function ParentDashboard() {
                         {k.share_with_class && <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs text-accent-foreground"><Users className="h-3 w-3" /> Shares with class</span>}
                       </div>
                       <div className="flex gap-1">
+                        <Button size="sm" variant="ghost" onClick={() => { setShareKidId(k.id); setShareKidName(k.full_name); }}><Share2 className="h-4 w-4" /></Button>
                         <Button size="sm" variant="ghost" onClick={() => { setEditingKid(k); setKidOpen(true); }}>Edit</Button>
                         <Button size="sm" variant="ghost" onClick={() => deleteKid(k.id)}><Trash2 className="h-4 w-4" /></Button>
                       </div>
