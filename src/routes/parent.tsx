@@ -25,7 +25,7 @@ export const Route = createFileRoute("/parent")({
 });
 
 type Kid = {
-  id: string; full_name: string; birth_date: string | null;
+  id: string; full_name: string; grade: string | null;
   school_id: string | null; class_id: string | null;
   share_with_class: boolean;
 };
