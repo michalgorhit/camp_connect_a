@@ -105,7 +105,7 @@ function SessionCard({ s, canRegister }: { s: Session; canRegister: boolean }) {
         <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{s.description}</p>
         <ul className="mt-4 space-y-1.5 text-sm text-muted-foreground">
           <li className="flex items-center gap-2"><Calendar className="h-4 w-4" /> {fmt(s.start_date)} — {fmt(s.end_date)}</li>
-          {s.location && <li className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {s.location}</li>}
+          {(s.location || s.postal_code) && <li className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {[s.location, s.postal_code].filter(Boolean).join(" · ")}</li>}
           {(s.age_min || s.age_max) && (
             <li className="flex items-center gap-2"><Users className="h-4 w-4" /> Ages {s.age_min ?? "?"}–{s.age_max ?? "?"}</li>
           )}
