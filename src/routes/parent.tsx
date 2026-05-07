@@ -328,7 +328,7 @@ function KidDialog({
 }: { open: boolean; onOpenChange: (v: boolean) => void; editing: Kid | null; schools: School[]; classes: Klass[]; onSaved: () => void }) {
   const { user } = useAuth();
   const [name, setName] = useState("");
-  const [birth, setBirth] = useState("");
+  const [grade, setGrade] = useState("");
   const [schoolName, setSchoolName] = useState("");
   const [className, setClassName] = useState("");
   const [shareClass, setShareClass] = useState(false);
@@ -338,12 +338,12 @@ function KidDialog({
     if (!open) return;
     if (editing) {
       setName(editing.full_name);
-      setBirth(editing.birth_date ?? "");
+      setGrade(editing.grade ?? "");
       setSchoolName(schools.find((s) => s.id === editing.school_id)?.name ?? "");
       setClassName(classes.find((c) => c.id === editing.class_id)?.name ?? "");
       setShareClass(editing.share_with_class);
     } else {
-      setName(""); setBirth(""); setSchoolName(""); setClassName(""); setShareClass(false);
+      setName(""); setGrade(""); setSchoolName(""); setClassName(""); setShareClass(false);
     }
   }, [open, editing]);
 
