@@ -168,6 +168,7 @@ function SessionDialog({
       title: form.title,
       description: form.description || null,
       location: form.location || null,
+      postal_code: form.postal_code || null,
       start_date: form.start_date,
       end_date: form.end_date,
       price_cents: form.price ? Math.round(Number(form.price) * 100) : null,
