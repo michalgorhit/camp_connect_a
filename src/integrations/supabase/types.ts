@@ -14,16 +14,325 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      camp_sessions: {
+        Row: {
+          age_max: number | null
+          age_min: number | null
+          capacity: number | null
+          created_at: string
+          description: string | null
+          end_date: string
+          id: string
+          image_url: string | null
+          is_published: boolean
+          location: string | null
+          price_cents: number | null
+          registration_url: string | null
+          start_date: string
+          title: string
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          age_max?: number | null
+          age_min?: number | null
+          capacity?: number | null
+          created_at?: string
+          description?: string | null
+          end_date: string
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          location?: string | null
+          price_cents?: number | null
+          registration_url?: string | null
+          start_date: string
+          title: string
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          age_max?: number | null
+          age_min?: number | null
+          capacity?: number | null
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          id?: string
+          image_url?: string | null
+          is_published?: boolean
+          location?: string | null
+          price_cents?: number | null
+          registration_url?: string | null
+          start_date?: string
+          title?: string
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: []
+      }
+      classes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          grade: string | null
+          id: string
+          name: string
+          school_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          grade?: string | null
+          id?: string
+          name: string
+          school_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          grade?: string | null
+          id?: string
+          name?: string
+          school_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classes_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids: {
+        Row: {
+          birth_date: string | null
+          class_id: string | null
+          created_at: string
+          full_name: string
+          id: string
+          notes: string | null
+          parent_id: string
+          school_id: string | null
+          share_with_class: boolean
+          updated_at: string
+        }
+        Insert: {
+          birth_date?: string | null
+          class_id?: string | null
+          created_at?: string
+          full_name: string
+          id?: string
+          notes?: string | null
+          parent_id: string
+          school_id?: string | null
+          share_with_class?: boolean
+          updated_at?: string
+        }
+        Update: {
+          birth_date?: string | null
+          class_id?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          notes?: string | null
+          parent_id?: string
+          school_id?: string | null
+          share_with_class?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kids_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          business_name: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          business_name?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          business_name?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      registrations: {
+        Row: {
+          created_at: string
+          id: string
+          kid_id: string
+          parent_id: string
+          session_id: string
+          shared_with_class: boolean
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kid_id: string
+          parent_id: string
+          session_id: string
+          shared_with_class?: boolean
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kid_id?: string
+          parent_id?: string
+          session_id?: string
+          shared_with_class?: boolean
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registrations_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registrations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "camp_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schools: {
+        Row: {
+          city: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      share_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          id: string
+          invitee_email: string
+          inviter_id: string
+          registration_id: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invitee_email: string
+          inviter_id: string
+          registration_id: string
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invitee_email?: string
+          inviter_id?: string
+          registration_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_invites_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "vendor" | "parent"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +459,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["vendor", "parent"],
+    },
   },
 } as const
