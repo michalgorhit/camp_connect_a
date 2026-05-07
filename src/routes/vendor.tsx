@@ -145,6 +145,7 @@ function SessionDialog({
         title: editing.title,
         description: editing.description ?? "",
         location: editing.location ?? "",
+        postal_code: (editing as any).postal_code ?? "",
         start_date: editing.start_date,
         end_date: editing.end_date,
         price: editing.price_cents != null ? (editing.price_cents / 100).toString() : "",
@@ -154,7 +155,7 @@ function SessionDialog({
         registration_url: editing.registration_url ?? "",
       });
     } else {
-      setForm({ title: "", description: "", location: "", start_date: "", end_date: "", price: "", age_min: "", age_max: "", capacity: "", registration_url: "" });
+      setForm({ title: "", description: "", location: "", postal_code: "", start_date: "", end_date: "", price: "", age_min: "", age_max: "", capacity: "", registration_url: "" });
     }
   }, [editing, open]);
 
