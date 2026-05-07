@@ -151,17 +151,23 @@ function AuthPage() {
           )}
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
-            {mode === "signup" && (
+            {mode === "signup" && role === "parent" && (
               <div>
                 <Label htmlFor="name">Full name</Label>
                 <Input id="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
               </div>
             )}
             {mode === "signup" && role === "vendor" && (
-              <div>
-                <Label htmlFor="biz">Camp / business name</Label>
-                <Input id="biz" required value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
-              </div>
+              <>
+                <div>
+                  <Label htmlFor="biz">Camp name</Label>
+                  <Input id="biz" required value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="loc">Location</Label>
+                  <Input id="loc" required value={businessLocation} onChange={(e) => setBusinessLocation(e.target.value)} placeholder="City, area code" />
+                </div>
+              </>
             )}
             <div>
               <Label htmlFor="email">Email</Label>
