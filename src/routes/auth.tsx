@@ -67,7 +67,7 @@ function AuthPage() {
         if (error) throw error;
         if (data.user) {
           await ensureRole(data.user.id, role);
-          toast.success("Welcome to Sunbeam!");
+          toast.success("Welcome to Summer Buddy Connect!");
           await refreshRoles();
         }
       } else {
@@ -120,7 +120,7 @@ function AuthPage() {
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-sun shadow-soft">
             <Sun className="h-5 w-5 text-sun-foreground" strokeWidth={2.5} />
           </span>
-          <span className="font-display text-xl font-bold">Sunbeam</span>
+          <span className="font-display text-xl font-bold">Summer Buddy Connect</span>
         </Link>
 
         <div className="rounded-3xl border border-border bg-card p-8 shadow-soft">
@@ -128,7 +128,7 @@ function AuthPage() {
             {mode === "signup" ? "Create your account" : "Welcome back"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "signup" ? "Join Sunbeam to find or run great camps." : "Sign in to manage your kids and camps."}
+            {mode === "signup" ? "Join Summer Buddy Connect to find or run great camps." : "Sign in to manage your kids and camps."}
           </p>
 
           {mode === "signup" && (
@@ -199,7 +199,7 @@ function AuthPage() {
           </div>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            {mode === "signup" ? "Already have an account? " : "New to Sunbeam? "}
+            {mode === "signup" ? "Already have an account? " : "New to Summer Buddy Connect? "}
             <button
               type="button"
               onClick={() => setMode(mode === "signup" ? "signin" : "signup")}

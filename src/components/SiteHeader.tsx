@@ -15,7 +15,7 @@ export function SiteHeader() {
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-sun shadow-soft">
             <Sun className="h-5 w-5 text-sun-foreground" strokeWidth={2.5} />
           </span>
-          <span className="font-display text-xl font-bold tracking-tight">Sunbeam</span>
+          <span className="font-display text-xl font-bold tracking-tight">Summer Buddy Connect</span>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
