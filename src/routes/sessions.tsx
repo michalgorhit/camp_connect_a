@@ -30,6 +30,7 @@ function SessionsPage() {
   const { user } = useAuth();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [areaCode, setAreaCode] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -42,6 +43,13 @@ function SessionsPage() {
       setLoading(false);
     })();
   }, []);
+
+  const filtered = areaCode.trim()
+    ? sessions.filter((s) =>
+        (s.postal_code ?? "").toLowerCase().startsWith(areaCode.trim().toLowerCase()) ||
+        (s.location ?? "").toLowerCase().includes(areaCode.trim().toLowerCase()),
+      )
+    : sessions;
 
   return (
     <div className="min-h-screen bg-gradient-meadow">
@@ -59,15 +67,25 @@ function SessionsPage() {
           )}
         </header>
 
+        <div className="mb-6 flex max-w-md items-center gap-2 rounded-2xl border border-border bg-card px-3 py-1.5 shadow-soft">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <Input
+            value={areaCode}
+            onChange={(e) => setAreaCode(e.target.value)}
+            placeholder="Search by area / postal code"
+            className="border-0 shadow-none focus-visible:ring-0"
+          />
+        </div>
+
         {loading ? (
           <p className="text-muted-foreground">Loading…</p>
-        ) : sessions.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-border bg-card p-12 text-center">
-            <p className="text-muted-foreground">No camps published yet — check back soon!</p>
+            <p className="text-muted-foreground">{areaCode ? "No camps match that area code." : "No camps published yet — check back soon!"}</p>
           </div>
         ) : (
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {sessions.map((s) => (
+            {filtered.map((s) => (
               <SessionCard key={s.id} s={s} canRegister={!!user} />
             ))}
           </div>
