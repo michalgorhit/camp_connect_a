@@ -545,3 +545,47 @@ function RegisterDialog({
     </Dialog>
   );
 }
+
+function KidShareDialog({
+  open, onOpenChange, kidId, kidName,
+}: { open: boolean; onOpenChange: (v: boolean) => void; kidId: string | null; kidName: string }) {
+  const { user } = useAuth();
+  const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !kidId) return;
+    setSending(true);
+    const { data, error } = await supabase
+      .from("share_invites")
+      .insert({ kid_id: kidId, inviter_id: user.id, invitee_email: email })
+      .select()
+      .single();
+    setSending(false);
+    if (error) return toast.error(error.message);
+    const link = `${window.location.origin}/sessions?invite=${data.token}`;
+    await navigator.clipboard.writeText(link).catch(() => {});
+    toast.success("Invite link copied — share it with your friend!");
+    setEmail("");
+    onOpenChange(false);
+  };
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="font-display">Share {kidName}'s camps with a friend</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-3">
+          <div>
+            <Label>Friend's parent email</Label>
+            <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="parent@example.com" />
+            <p className="mt-1 text-xs text-muted-foreground">They'll see all of {kidName}'s camp activities through your invite link.</p>
+          </div>
+          <DialogFooter>
+            <Button type="submit" variant="hero" disabled={sending}><Mail className="h-4 w-4" /> Create invite</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
