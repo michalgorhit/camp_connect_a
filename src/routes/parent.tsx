@@ -47,6 +47,8 @@ function ParentDashboard() {
   const [editingKid, setEditingKid] = useState<Kid | null>(null);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [pendingSession, setPendingSession] = useState<Sess | null>(null);
+  const [shareKidId, setShareKidId] = useState<string | null>(null);
+  const [shareKidName, setShareKidName] = useState<string>("");
 
   const load = async () => {
     if (!user) return;
@@ -147,6 +149,7 @@ function ParentDashboard() {
                         {k.share_with_class && <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs text-accent-foreground"><Users className="h-3 w-3" /> Shares with class</span>}
                       </div>
                       <div className="flex gap-1">
+                        <Button size="sm" variant="ghost" onClick={() => { setShareKidId(k.id); setShareKidName(k.full_name); }}><Share2 className="h-4 w-4" /></Button>
                         <Button size="sm" variant="ghost" onClick={() => { setEditingKid(k); setKidOpen(true); }}>Edit</Button>
                         <Button size="sm" variant="ghost" onClick={() => deleteKid(k.id)}><Trash2 className="h-4 w-4" /></Button>
                       </div>
@@ -213,6 +216,13 @@ function ParentDashboard() {
           open={registerOpen} onOpenChange={setRegisterOpen}
           session={pendingSession} kids={kids}
           onSaved={() => { setRegisterOpen(false); setPendingSession(null); load(); }}
+        />
+
+        <KidShareDialog
+          open={!!shareKidId}
+          onOpenChange={(v: boolean) => { if (!v) setShareKidId(null); }}
+          kidId={shareKidId}
+          kidName={shareKidName}
         />
       </main>
     </div>
@@ -408,7 +418,19 @@ function KidDialog({
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div><Label>Full name</Label><Input required value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div><Label>Grade level</Label><Input value={grade} onChange={(e) => setGrade(e.target.value)} placeholder="e.g. Grade 3" /></div>
+          <div>
+            <Label>Grade level</Label>
+            <select
+              className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+              value={grade}
+              onChange={(e) => setGrade(e.target.value)}
+            >
+              <option value="">Select a grade…</option>
+              {["Pre-K", "Kindergarten", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"].map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+          </div>
           <div className="relative">
             <Label>School</Label>
             <Input value={schoolName} onChange={(e) => setSchoolName(e.target.value)} placeholder="Type to search or create" />
@@ -519,6 +541,50 @@ function RegisterDialog({
             </DialogFooter>
           </form>
         )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function KidShareDialog({
+  open, onOpenChange, kidId, kidName,
+}: { open: boolean; onOpenChange: (v: boolean) => void; kidId: string | null; kidName: string }) {
+  const { user } = useAuth();
+  const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !kidId) return;
+    setSending(true);
+    const { data, error } = await supabase
+      .from("share_invites")
+      .insert({ kid_id: kidId, inviter_id: user.id, invitee_email: email })
+      .select()
+      .single();
+    setSending(false);
+    if (error) return toast.error(error.message);
+    const link = `${window.location.origin}/sessions?invite=${data.token}`;
+    await navigator.clipboard.writeText(link).catch(() => {});
+    toast.success("Invite link copied — share it with your friend!");
+    setEmail("");
+    onOpenChange(false);
+  };
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="font-display">Share {kidName}'s camps with a friend</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-3">
+          <div>
+            <Label>Friend's parent email</Label>
+            <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="parent@example.com" />
+            <p className="mt-1 text-xs text-muted-foreground">They'll see all of {kidName}'s camp activities through your invite link.</p>
+          </div>
+          <DialogFooter>
+            <Button type="submit" variant="hero" disabled={sending}><Mail className="h-4 w-4" /> Create invite</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -26,6 +26,7 @@ export type Database = {
           image_url: string | null
           is_published: boolean
           location: string | null
+          postal_code: string | null
           price_cents: number | null
           registration_url: string | null
           start_date: string
@@ -44,6 +45,7 @@ export type Database = {
           image_url?: string | null
           is_published?: boolean
           location?: string | null
+          postal_code?: string | null
           price_cents?: number | null
           registration_url?: string | null
           start_date: string
@@ -62,6 +64,7 @@ export type Database = {
           image_url?: string | null
           is_published?: boolean
           location?: string | null
+          postal_code?: string | null
           price_cents?: number | null
           registration_url?: string | null
           start_date?: string
@@ -163,6 +166,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          business_location: string | null
           business_name: string | null
           created_at: string
           full_name: string | null
@@ -172,6 +176,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          business_location?: string | null
           business_name?: string | null
           created_at?: string
           full_name?: string | null
@@ -181,6 +186,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          business_location?: string | null
           business_name?: string | null
           created_at?: string
           full_name?: string | null
@@ -266,7 +272,8 @@ export type Database = {
           id: string
           invitee_email: string
           inviter_id: string
-          registration_id: string
+          kid_id: string | null
+          registration_id: string | null
           token: string
         }
         Insert: {
@@ -275,7 +282,8 @@ export type Database = {
           id?: string
           invitee_email: string
           inviter_id: string
-          registration_id: string
+          kid_id?: string | null
+          registration_id?: string | null
           token?: string
         }
         Update: {
@@ -284,7 +292,8 @@ export type Database = {
           id?: string
           invitee_email?: string
           inviter_id?: string
-          registration_id?: string
+          kid_id?: string | null
+          registration_id?: string | null
           token?: string
         }
         Relationships: [

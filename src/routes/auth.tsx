@@ -29,6 +29,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [businessLocation, setBusinessLocation] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user, refreshRoles } = useAuth();
@@ -39,10 +40,13 @@ function AuthPage() {
 
   const ensureRole = async (uid: string, r: "parent" | "vendor") => {
     await supabase.from("user_roles").upsert({ user_id: uid, role: r }, { onConflict: "user_id,role" });
-    if (r === "vendor" && businessName) {
-      await supabase.from("profiles").update({ business_name: businessName }).eq("id", uid);
-    }
-    if (fullName) {
+    if (r === "vendor") {
+      await supabase.from("profiles").update({
+        business_name: businessName || null,
+        business_location: businessLocation || null,
+        full_name: businessName || null,
+      }).eq("id", uid);
+    } else if (fullName) {
       await supabase.from("profiles").update({ full_name: fullName }).eq("id", uid);
     }
   };
@@ -147,17 +151,23 @@ function AuthPage() {
           )}
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
-            {mode === "signup" && (
+            {mode === "signup" && role === "parent" && (
               <div>
                 <Label htmlFor="name">Full name</Label>
                 <Input id="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
               </div>
             )}
             {mode === "signup" && role === "vendor" && (
-              <div>
-                <Label htmlFor="biz">Camp / business name</Label>
-                <Input id="biz" required value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
-              </div>
+              <>
+                <div>
+                  <Label htmlFor="biz">Camp name</Label>
+                  <Input id="biz" required value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
+                </div>
+                <div>
+                  <Label htmlFor="loc">Location</Label>
+                  <Input id="loc" required value={businessLocation} onChange={(e) => setBusinessLocation(e.target.value)} placeholder="City, area code" />
+                </div>
+              </>
             )}
             <div>
               <Label htmlFor="email">Email</Label>

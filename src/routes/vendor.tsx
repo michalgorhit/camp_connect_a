@@ -132,7 +132,7 @@ function SessionDialog({
 }: { open: boolean; onOpenChange: (v: boolean) => void; editing: Sess | null; onSaved: () => void }) {
   const { user } = useAuth();
   const [form, setForm] = useState({
-    title: "", description: "", location: "",
+    title: "", description: "", location: "", postal_code: "",
     start_date: "", end_date: "",
     price: "", age_min: "", age_max: "", capacity: "",
     registration_url: "",
@@ -145,6 +145,7 @@ function SessionDialog({
         title: editing.title,
         description: editing.description ?? "",
         location: editing.location ?? "",
+        postal_code: (editing as any).postal_code ?? "",
         start_date: editing.start_date,
         end_date: editing.end_date,
         price: editing.price_cents != null ? (editing.price_cents / 100).toString() : "",
@@ -154,7 +155,7 @@ function SessionDialog({
         registration_url: editing.registration_url ?? "",
       });
     } else {
-      setForm({ title: "", description: "", location: "", start_date: "", end_date: "", price: "", age_min: "", age_max: "", capacity: "", registration_url: "" });
+      setForm({ title: "", description: "", location: "", postal_code: "", start_date: "", end_date: "", price: "", age_min: "", age_max: "", capacity: "", registration_url: "" });
     }
   }, [editing, open]);
 
@@ -167,6 +168,7 @@ function SessionDialog({
       title: form.title,
       description: form.description || null,
       location: form.location || null,
+      postal_code: form.postal_code || null,
       start_date: form.start_date,
       end_date: form.end_date,
       price_cents: form.price ? Math.round(Number(form.price) * 100) : null,
@@ -193,7 +195,10 @@ function SessionDialog({
         <form onSubmit={submit} className="space-y-3">
           <div><Label>Title</Label><Input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
           <div><Label>Description</Label><Textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-          <div><Label>Location</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Location</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></div>
+            <div><Label>Area / postal code</Label><Input value={form.postal_code} onChange={(e) => setForm({ ...form, postal_code: e.target.value })} placeholder="e.g. 94110" /></div>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Starts</Label><Input type="date" required value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} /></div>
             <div><Label>Ends</Label><Input type="date" required value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} /></div>
