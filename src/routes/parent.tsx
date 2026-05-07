@@ -220,7 +220,7 @@ function ParentDashboard() {
 
         <KidShareDialog
           open={!!shareKidId}
-          onOpenChange={(v) => { if (!v) setShareKidId(null); }}
+          onOpenChange={(v: boolean) => { if (!v) setShareKidId(null); }}
           kidId={shareKidId}
           kidName={shareKidName}
         />
