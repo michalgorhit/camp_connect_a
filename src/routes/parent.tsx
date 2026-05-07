@@ -47,6 +47,8 @@ function ParentDashboard() {
   const [editingKid, setEditingKid] = useState<Kid | null>(null);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [pendingSession, setPendingSession] = useState<Sess | null>(null);
+  const [shareKidId, setShareKidId] = useState<string | null>(null);
+  const [shareKidName, setShareKidName] = useState<string>("");
 
   const load = async () => {
     if (!user) return;
