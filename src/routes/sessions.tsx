@@ -11,6 +11,7 @@ type Session = {
   title: string;
   description: string | null;
   location: string | null;
+  postal_code: string | null;
   start_date: string;
   end_date: string;
   price_cents: number | null;
