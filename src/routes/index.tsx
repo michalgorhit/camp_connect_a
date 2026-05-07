@@ -96,7 +96,7 @@ function Index() {
 
       <footer className="border-t border-border/60 py-8">
         <div className="mx-auto max-w-6xl px-4 text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Sunbeam. Made with sunshine.
+          © {new Date().getFullYear()} Summer Buddy Connect. Made with sunshine.
         </div>
       </footer>
     </div>
