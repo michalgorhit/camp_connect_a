@@ -132,7 +132,7 @@ function SessionDialog({
 }: { open: boolean; onOpenChange: (v: boolean) => void; editing: Sess | null; onSaved: () => void }) {
   const { user } = useAuth();
   const [form, setForm] = useState({
-    title: "", description: "", location: "",
+    title: "", description: "", location: "", postal_code: "",
     start_date: "", end_date: "",
     price: "", age_min: "", age_max: "", capacity: "",
     registration_url: "",
