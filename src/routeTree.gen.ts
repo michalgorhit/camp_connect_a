@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendorRouteImport } from './routes/vendor'
 import { Route as SessionsRouteImport } from './routes/sessions'
+import { Route as ParentRouteImport } from './routes/parent'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -22,6 +23,11 @@ const VendorRoute = VendorRouteImport.update({
 const SessionsRoute = SessionsRouteImport.update({
   id: '/sessions',
   path: '/sessions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentRoute = ParentRouteImport.update({
+  id: '/parent',
+  path: '/parent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -38,12 +44,14 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/parent': typeof ParentRoute
   '/sessions': typeof SessionsRoute
   '/vendor': typeof VendorRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/parent': typeof ParentRoute
   '/sessions': typeof SessionsRoute
   '/vendor': typeof VendorRoute
 }
@@ -51,20 +59,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/parent': typeof ParentRoute
   '/sessions': typeof SessionsRoute
   '/vendor': typeof VendorRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/sessions' | '/vendor'
+  fullPaths: '/' | '/auth' | '/parent' | '/sessions' | '/vendor'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/sessions' | '/vendor'
-  id: '__root__' | '/' | '/auth' | '/sessions' | '/vendor'
+  to: '/' | '/auth' | '/parent' | '/sessions' | '/vendor'
+  id: '__root__' | '/' | '/auth' | '/parent' | '/sessions' | '/vendor'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  ParentRoute: typeof ParentRoute
   SessionsRoute: typeof SessionsRoute
   VendorRoute: typeof VendorRoute
 }
@@ -83,6 +93,13 @@ declare module '@tanstack/react-router' {
       path: '/sessions'
       fullPath: '/sessions'
       preLoaderRoute: typeof SessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parent': {
+      id: '/parent'
+      path: '/parent'
+      fullPath: '/parent'
+      preLoaderRoute: typeof ParentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -105,6 +122,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  ParentRoute: ParentRoute,
   SessionsRoute: SessionsRoute,
   VendorRoute: VendorRoute,
 }
