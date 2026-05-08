@@ -201,11 +201,11 @@ function ParentDashboard() {
           kids={kids}
           vacations={vacations}
           onAdd={() => setVacOpen(true)}
-          onDeleteVacation={async (id) => {
+          onDeleteVacation={async (id: string) => {
             await supabase.from("parent_vacations").delete().eq("id", id);
             loadVacations();
           }}
-          onQuickToggleWeek={async (start, end) => {
+          onQuickToggleWeek={async (start: string, end: string) => {
             if (!user) return;
             const existing = vacations.find((v) => v.start_date === start && v.end_date === end);
             if (existing) {
