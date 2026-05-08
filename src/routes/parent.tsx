@@ -50,6 +50,18 @@ function ParentDashboard() {
   const [pendingSession, setPendingSession] = useState<Sess | null>(null);
   const [shareKidId, setShareKidId] = useState<string | null>(null);
   const [shareKidName, setShareKidName] = useState<string>("");
+  const [vacations, setVacations] = useState<Vacation[]>([]);
+  const [vacOpen, setVacOpen] = useState(false);
+
+  const loadVacations = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("parent_vacations")
+      .select("id,start_date,end_date,kind,label")
+      .eq("parent_id", user.id)
+      .order("start_date");
+    setVacations((data ?? []) as Vacation[]);
+  };
 
   const load = async () => {
     if (!user) return;
