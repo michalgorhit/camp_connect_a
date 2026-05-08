@@ -8,6 +8,7 @@ type AuthCtx = {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  rolesLoading: boolean;
   roles: AppRole[];
   signOut: () => Promise<void>;
   refreshRoles: () => Promise<void>;
