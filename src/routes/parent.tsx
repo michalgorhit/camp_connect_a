@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Plus, School, Baby, Users, Share2, ExternalLink, Trash2, Mail } from "lucide-react";
+import { Plus, School, Baby, Users, Share2, ExternalLink, Trash2, Mail, CalendarDays, Plane, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { SiteHeader } from "@/components/SiteHeader";
