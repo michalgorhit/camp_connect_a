@@ -195,6 +195,30 @@ function ParentDashboard() {
           )}
         </section>
 
+        <SummerCalendar
+          regs={regs}
+          sessMap={sessMap}
+          kids={kids}
+          vacations={vacations}
+          onAdd={() => setVacOpen(true)}
+          onDeleteVacation={async (id) => {
+            await supabase.from("parent_vacations").delete().eq("id", id);
+            loadVacations();
+          }}
+          onQuickToggleWeek={async (start, end) => {
+            if (!user) return;
+            const existing = vacations.find((v) => v.start_date === start && v.end_date === end);
+            if (existing) {
+              await supabase.from("parent_vacations").delete().eq("id", existing.id);
+            } else {
+              await supabase.from("parent_vacations").insert({
+                parent_id: user.id, start_date: start, end_date: end, kind: "travel", label: "Family travel",
+              });
+            }
+            loadVacations();
+          }}
+        />
+
         <section className="mb-12">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-2xl font-semibold">Registered camps</h2>
