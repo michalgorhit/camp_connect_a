@@ -172,6 +172,39 @@ export type Database = {
           },
         ]
       }
+      parent_vacations: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          kind: string
+          label: string | null
+          parent_id: string
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          kind?: string
+          label?: string | null
+          parent_id: string
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          kind?: string
+          label?: string | null
+          parent_id?: string
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
