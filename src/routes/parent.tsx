@@ -131,7 +131,7 @@ function ParentDashboard() {
     }
   };
 
-  useEffect(() => { load(); }, [user]);
+  useEffect(() => { load(); loadVacations(); }, [user]);
 
   // Deep link: /parent?session=...
   useEffect(() => {
