@@ -282,6 +282,12 @@ function ParentDashboard() {
           kidId={shareKidId}
           kidName={shareKidName}
         />
+
+        <VacationDialog
+          open={vacOpen}
+          onOpenChange={setVacOpen}
+          onSaved={() => { setVacOpen(false); loadVacations(); }}
+        />
       </main>
     </div>
   );
