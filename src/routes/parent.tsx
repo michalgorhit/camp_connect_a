@@ -32,7 +32,8 @@ type Kid = {
 type School = { id: string; name: string; city: string | null };
 type Klass = { id: string; school_id: string; name: string; grade: string | null };
 type Reg = { id: string; kid_id: string; session_id: string; status: string; shared_with_class: boolean };
-type Sess = { id: string; title: string; start_date: string; end_date: string; registration_url: string | null };
+type Sess = { id: string; title: string; start_date: string; end_date: string; registration_url: string | null; location?: string | null };
+type Vacation = { id: string; start_date: string; end_date: string; kind: string; label: string | null };
 
 function ParentDashboard() {
   const { user } = useAuth();
