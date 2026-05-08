@@ -653,3 +653,194 @@ function KidShareDialog({
     </Dialog>
   );
 }
+
+// ============================================================================
+// Summer Calendar — weeks of summer with vacation/travel marking
+// ============================================================================
+
+const SUMMER_WEEKS_2026: Array<{ start: string; end: string; label: string }> = (() => {
+  // Mondays from June 1, 2026 (which is a Monday) through Aug 24, 2026 (12 weeks)
+  const out: Array<{ start: string; end: string; label: string }> = [];
+  const d = new Date(Date.UTC(2026, 5, 1)); // June 1
+  for (let i = 0; i < 13; i++) {
+    const start = new Date(d);
+    const end = new Date(d);
+    end.setUTCDate(end.getUTCDate() + 6);
+    out.push({
+      start: start.toISOString().slice(0, 10),
+      end: end.toISOString().slice(0, 10),
+      label: `${start.toLocaleDateString(undefined, { month: "short", day: "numeric" })} – ${end.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`,
+    });
+    d.setUTCDate(d.getUTCDate() + 7);
+  }
+  return out;
+})();
+
+function rangesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string) {
+  return aStart <= bEnd && bStart <= aEnd;
+}
+
+function SummerCalendar({
+  regs, sessMap, kids, vacations, onAdd, onDeleteVacation, onQuickToggleWeek,
+}: {
+  regs: Reg[];
+  sessMap: Record<string, Sess>;
+  kids: Kid[];
+  vacations: Vacation[];
+  onAdd: () => void;
+  onDeleteVacation: (id: string) => void;
+  onQuickToggleWeek: (start: string, end: string) => void;
+}) {
+  return (
+    <section className="mb-12">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-display text-2xl font-semibold flex items-center gap-2">
+          <CalendarDays className="h-5 w-5" /> Summer 2026 calendar
+        </h2>
+        <Button variant="outline" size="sm" onClick={onAdd}>
+          <Plane className="h-4 w-4" /> Add vacation
+        </Button>
+      </div>
+      <p className="mb-4 text-sm text-muted-foreground">
+        Tap a week to mark it as a travel week (no camp needed). Use “Add vacation” for longer trips.
+      </p>
+
+      <div className="space-y-2">
+        {SUMMER_WEEKS_2026.map((w) => {
+          const weekRegs = regs.filter((r) => {
+            const s = sessMap[r.session_id];
+            return s && rangesOverlap(s.start_date, s.end_date, w.start, w.end);
+          });
+          const vacs = vacations.filter((v) => rangesOverlap(v.start_date, v.end_date, w.start, w.end));
+          const isFullWeekTravel = vacs.some((v) => v.start_date === w.start && v.end_date === w.end);
+          const onVacation = vacs.length > 0;
+
+          return (
+            <div
+              key={w.start}
+              className={`rounded-2xl border p-4 shadow-soft transition ${
+                onVacation
+                  ? "border-sun bg-sun/15"
+                  : weekRegs.length > 0
+                  ? "border-primary/40 bg-card"
+                  : "border-border bg-card"
+              }`}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-display text-base font-semibold">{w.label}</p>
+                    {onVacation && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-sun px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sun-foreground">
+                        <Plane className="h-3 w-3" /> Away
+                      </span>
+                    )}
+                  </div>
+
+                  {weekRegs.length > 0 ? (
+                    <ul className="mt-2 space-y-1 text-sm">
+                      {weekRegs.map((r) => {
+                        const s = sessMap[r.session_id];
+                        const k = kids.find((x) => x.id === r.kid_id);
+                        return (
+                          <li key={r.id} className="flex items-center gap-2">
+                            <span className={`h-1.5 w-1.5 rounded-full ${r.status === "registered" ? "bg-primary" : "bg-accent-foreground/60"}`} />
+                            <span className="font-medium">{k?.full_name ?? "Kid"}</span>
+                            <span className="text-muted-foreground">· {s.title}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : !onVacation ? (
+                    <p className="mt-1 text-xs text-muted-foreground">No camp planned</p>
+                  ) : null}
+
+                  {vacs.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {vacs.map((v) => (
+                        <span key={v.id} className="inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 text-[11px] text-muted-foreground border border-border">
+                          {v.label || (v.kind === "vacation" ? "Vacation" : "Travel")}
+                          <button onClick={() => onDeleteVacation(v.id)} className="ml-0.5 text-muted-foreground hover:text-destructive">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <Button
+                  size="sm"
+                  variant={isFullWeekTravel ? "sun" : "ghost"}
+                  onClick={() => onQuickToggleWeek(w.start, w.end)}
+                >
+                  {isFullWeekTravel ? "Clear travel" : "Mark as travel"}
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function VacationDialog({
+  open, onOpenChange, onSaved,
+}: { open: boolean; onOpenChange: (v: boolean) => void; onSaved: () => void }) {
+  const { user } = useAuth();
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [kind, setKind] = useState<"vacation" | "travel">("vacation");
+  const [label, setLabel] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) { setStart(""); setEnd(""); setKind("vacation"); setLabel(""); }
+  }, [open]);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    if (start > end) { toast.error("End date must be after start date"); return; }
+    setSaving(true);
+    const { error } = await supabase.from("parent_vacations").insert({
+      parent_id: user.id, start_date: start, end_date: end, kind, label: label || null,
+    });
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success("Added to your calendar");
+    onSaved();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="font-display text-2xl">Add a vacation or travel week</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-3">
+          <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
+            <button type="button" onClick={() => setKind("vacation")}
+              className={`rounded-md py-2 text-sm font-medium transition ${kind === "vacation" ? "bg-card shadow-soft" : "text-muted-foreground"}`}>
+              Family vacation
+            </button>
+            <button type="button" onClick={() => setKind("travel")}
+              className={`rounded-md py-2 text-sm font-medium transition ${kind === "travel" ? "bg-card shadow-soft" : "text-muted-foreground"}`}>
+              Travel week
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Start</Label><Input type="date" required value={start} onChange={(e) => setStart(e.target.value)} /></div>
+            <div><Label>End</Label><Input type="date" required value={end} onChange={(e) => setEnd(e.target.value)} /></div>
+          </div>
+          <div><Label>Label (optional)</Label><Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Beach trip" /></div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="submit" variant="hero" disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
