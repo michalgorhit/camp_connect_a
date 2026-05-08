@@ -4,8 +4,8 @@ import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 
 export function RequireAuth({ children, role }: { children: ReactNode; role?: "parent" | "vendor" }) {
-  const { user, loading, roles } = useAuth();
-  if (loading) {
+  const { user, loading, rolesLoading, roles } = useAuth();
+  if (loading || (user && rolesLoading)) {
     return (
       <div className="grid min-h-screen place-items-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
