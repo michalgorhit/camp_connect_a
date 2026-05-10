@@ -128,7 +128,7 @@ function VendorDashboard() {
                   <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" /> {new Date(s.start_date).toLocaleDateString()} – {new Date(s.end_date).toLocaleDateString()}</span>
                     {s.location && <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" /> {s.location}</span>}
-                    <span className="flex items-center gap-1.5"><Users className="h-4 w-4" /> {regCounts[s.id] ?? 0} interested</span>
+                    <span className="flex items-center gap-1.5"><Users className="h-4 w-4" /> {(regCounts[s.id]?.registered ?? 0)} registered · {(regCounts[s.id]?.interested ?? 0)} interested</span>
                     {s.available_spots != null && <span>{s.available_spots} spots left</span>}
                     {s.registration_deadline && <span>Register by {new Date(s.registration_deadline).toLocaleDateString()}</span>}
                   </div>
