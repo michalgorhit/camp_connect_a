@@ -54,7 +54,7 @@ function VendorDashboard() {
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<Sess | null>(null);
-  const [regCounts, setRegCounts] = useState<Record<string, number>>({});
+  const [regCounts, setRegCounts] = useState<Record<string, { interested: number; registered: number }>>({});
 
   const load = async () => {
     if (!user) return;
@@ -69,10 +69,14 @@ function VendorDashboard() {
     if (ids.length) {
       const { data: regs } = await supabase
         .from("registrations")
-        .select("session_id")
+        .select("session_id,status")
         .in("session_id", ids);
-      const counts: Record<string, number> = {};
-      (regs ?? []).forEach((r) => { counts[r.session_id] = (counts[r.session_id] ?? 0) + 1; });
+      const counts: Record<string, { interested: number; registered: number }> = {};
+      (regs ?? []).forEach((r) => {
+        const c = counts[r.session_id] ?? { interested: 0, registered: 0 };
+        if (r.status === "registered") c.registered += 1; else c.interested += 1;
+        counts[r.session_id] = c;
+      });
       setRegCounts(counts);
     }
   };
@@ -124,7 +128,7 @@ function VendorDashboard() {
                   <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" /> {new Date(s.start_date).toLocaleDateString()} – {new Date(s.end_date).toLocaleDateString()}</span>
                     {s.location && <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" /> {s.location}</span>}
-                    <span className="flex items-center gap-1.5"><Users className="h-4 w-4" /> {regCounts[s.id] ?? 0} interested</span>
+                    <span className="flex items-center gap-1.5"><Users className="h-4 w-4" /> {(regCounts[s.id]?.registered ?? 0)} registered · {(regCounts[s.id]?.interested ?? 0)} interested</span>
                     {s.available_spots != null && <span>{s.available_spots} spots left</span>}
                     {s.registration_deadline && <span>Register by {new Date(s.registration_deadline).toLocaleDateString()}</span>}
                   </div>
