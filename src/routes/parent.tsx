@@ -127,21 +127,19 @@ function ParentDashboard() {
 
       const ckIds = Array.from(visibleKidIds);
       if (ckIds.length) {
-        // For classmates we need shared_with_class=true; for direct shares the
-        // invite itself implies access (RLS doesn't allow us to read those yet,
-        // so we still rely on shared_with_class for now).
+        // Show ALL camps these visible friends are registered/interested in
+        // (not just per-registration shared flag). Access is gated by RLS.
         const { data: cRegs } = await supabase
           .from("registrations")
           .select("*")
-          .in("kid_id", ckIds)
-          .eq("shared_with_class", true);
+          .in("kid_id", ckIds);
         setClassmateRegs((cRegs ?? []).map((r: any) => ({ ...r, kid_name: nameById[r.kid_id] })));
 
         const extraIds = (cRegs ?? []).map((r: any) => r.session_id).filter((id: string) => !baseSessMap[id]);
         if (extraIds.length) {
           const { data: extra } = await supabase
             .from("camp_sessions")
-            .select("id,title,start_date,end_date,registration_url,location")
+            .select("id,title,start_date,end_date,registration_url,location,price_cents")
             .in("id", extraIds);
           setSessMap((prev) => {
             const m = { ...prev };
