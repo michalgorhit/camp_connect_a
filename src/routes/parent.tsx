@@ -815,14 +815,20 @@ function SummerCalendar({
                         {weekFriends.length === 0 ? (
                           <p className="text-xs text-muted-foreground">No friends have shared activities this week yet.</p>
                         ) : (
-                          <ul className="space-y-1 text-sm">
+                          <ul className="space-y-1.5 text-sm">
                             {weekFriends.map((r) => {
                               const s = sessMap[r.session_id];
+                              const withMe = regs.some((mine) => mine.session_id === r.session_id);
+                              const price = s?.price_cents != null ? `$${(s.price_cents / 100).toFixed(0)}` : null;
                               return (
-                                <li key={r.id} className="flex items-center gap-2">
+                                <li key={r.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
                                   <span className={`h-1.5 w-1.5 rounded-full ${r.status === "registered" ? "bg-primary" : "bg-accent-foreground/60"}`} />
                                   <span className="font-medium">{r.kid_name ?? "Friend"}</span>
                                   <span className="text-muted-foreground">· {s?.title ?? "Camp"}</span>
+                                  {price && <span className="text-xs text-muted-foreground">· {price}</span>}
+                                  {withMe && (
+                                    <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">With me</span>
+                                  )}
                                   <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">{r.status}</span>
                                 </li>
                               );
