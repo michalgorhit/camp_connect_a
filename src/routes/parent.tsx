@@ -83,7 +83,7 @@ function ParentDashboard() {
       if (sessIds.length) {
         const { data: ss } = await supabase
           .from("camp_sessions")
-          .select("id,title,start_date,end_date,registration_url,location")
+          .select("id,title,start_date,end_date,registration_url,location,price_cents")
           .in("id", sessIds);
         (ss ?? []).forEach((s) => { baseSessMap[s.id] = s as Sess; });
       }
