@@ -225,6 +225,7 @@ function ParentDashboard() {
           regs={regs}
           sessMap={sessMap}
           kids={kids}
+          classmateRegs={classmateRegs}
           vacations={vacations}
           onAdd={() => setVacOpen(true)}
           onDeleteVacation={async (id: string) => {
