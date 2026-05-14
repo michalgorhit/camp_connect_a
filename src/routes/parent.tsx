@@ -708,16 +708,18 @@ function rangesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: strin
 }
 
 function SummerCalendar({
-  regs, sessMap, kids, vacations, onAdd, onDeleteVacation, onQuickToggleWeek,
+  regs, sessMap, kids, classmateRegs, vacations, onAdd, onDeleteVacation, onQuickToggleWeek,
 }: {
   regs: Reg[];
   sessMap: Record<string, Sess>;
   kids: Kid[];
+  classmateRegs: (Reg & { kid_name?: string })[];
   vacations: Vacation[];
   onAdd: () => void;
   onDeleteVacation: (id: string) => void;
   onQuickToggleWeek: (start: string, end: string) => void;
 }) {
+  const [openWeek, setOpenWeek] = useState<string | null>(null);
   return (
     <section className="mb-12">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -729,7 +731,7 @@ function SummerCalendar({
         </Button>
       </div>
       <p className="mb-4 text-sm text-muted-foreground">
-        Tap a week to mark it as a travel week (no camp needed). Use “Add vacation” for longer trips.
+        Tap a week to mark it as a travel week (no camp needed). Use “Add vacation” for longer trips. Tap “Friends this week” to see what classmates and shared friends are up to.
       </p>
 
       <div className="space-y-2">
@@ -738,9 +740,14 @@ function SummerCalendar({
             const s = sessMap[r.session_id];
             return s && rangesOverlap(s.start_date, s.end_date, w.start, w.end);
           });
+          const weekFriends = classmateRegs.filter((r) => {
+            const s = sessMap[r.session_id];
+            return s && rangesOverlap(s.start_date, s.end_date, w.start, w.end);
+          });
           const vacs = vacations.filter((v) => rangesOverlap(v.start_date, v.end_date, w.start, w.end));
           const isFullWeekTravel = vacs.some((v) => v.start_date === w.start && v.end_date === w.end);
           const onVacation = vacs.length > 0;
+          const isOpen = openWeek === w.start;
 
           return (
             <div
@@ -794,6 +801,39 @@ function SummerCalendar({
                       ))}
                     </div>
                   )}
+
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => setOpenWeek(isOpen ? null : w.start)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground hover:bg-accent"
+                    >
+                      <Users className="h-3.5 w-3.5" />
+                      Friends this week ({weekFriends.length})
+                      <span className={`transition ${isOpen ? "rotate-180" : ""}`}>▾</span>
+                    </button>
+                    {isOpen && (
+                      <div className="mt-2 rounded-xl border border-border bg-background/60 p-3">
+                        {weekFriends.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">No friends have shared activities this week yet.</p>
+                        ) : (
+                          <ul className="space-y-1 text-sm">
+                            {weekFriends.map((r) => {
+                              const s = sessMap[r.session_id];
+                              return (
+                                <li key={r.id} className="flex items-center gap-2">
+                                  <span className={`h-1.5 w-1.5 rounded-full ${r.status === "registered" ? "bg-primary" : "bg-accent-foreground/60"}`} />
+                                  <span className="font-medium">{r.kid_name ?? "Friend"}</span>
+                                  <span className="text-muted-foreground">· {s?.title ?? "Camp"}</span>
+                                  <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">{r.status}</span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <Button
