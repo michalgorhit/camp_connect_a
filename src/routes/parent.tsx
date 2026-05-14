@@ -89,7 +89,11 @@ function ParentDashboard() {
       }
       setSessMap(baseSessMap);
 
-      // Classmate registrations — fetch in two steps to avoid embed dependency
+      // Visible kids = classmates of my kids (where they share with class)
+      // PLUS kids directly shared with me via share_invites (by my email).
+      const visibleKidIds = new Set<string>();
+      const nameById: Record<string, string> = {};
+
       const myClassIds = (kidsData ?? []).map((k) => k.class_id).filter(Boolean) as string[];
       if (myClassIds.length) {
         const { data: classmateKids } = await supabase
@@ -97,31 +101,53 @@ function ParentDashboard() {
           .select("id, full_name, class_id")
           .in("class_id", myClassIds)
           .neq("parent_id", user.id);
-        const ckIds = (classmateKids ?? []).map((k: any) => k.id);
-        if (ckIds.length) {
-          const { data: cRegs } = await supabase
-            .from("registrations")
-            .select("*")
-            .in("kid_id", ckIds)
-            .eq("shared_with_class", true);
-          const nameById: Record<string, string> = {};
-          (classmateKids ?? []).forEach((k: any) => { nameById[k.id] = k.full_name; });
-          setClassmateRegs((cRegs ?? []).map((r: any) => ({ ...r, kid_name: nameById[r.kid_id] })));
+        (classmateKids ?? []).forEach((k: any) => {
+          if (k.id) { visibleKidIds.add(k.id); nameById[k.id] = k.full_name; }
+        });
+      }
 
-          const extraIds = (cRegs ?? []).map((r: any) => r.session_id).filter((id: string) => !baseSessMap[id]);
-          if (extraIds.length) {
-            const { data: extra } = await supabase
-              .from("camp_sessions")
-              .select("id,title,start_date,end_date,registration_url,location")
-              .in("id", extraIds);
-            setSessMap((prev) => {
-              const m = { ...prev };
-              (extra ?? []).forEach((s) => { m[s.id] = s as Sess; });
-              return m;
-            });
-          }
-        } else {
-          setClassmateRegs([]);
+      // Direct share invites addressed to me
+      if (user.email) {
+        const { data: invites } = await supabase
+          .from("share_invites")
+          .select("kid_id")
+          .eq("invitee_email", user.email)
+          .not("kid_id", "is", null);
+        const directIds = (invites ?? []).map((i: any) => i.kid_id).filter(Boolean);
+        if (directIds.length) {
+          const { data: directKids } = await supabase
+            .from("kids")
+            .select("id, full_name")
+            .in("id", directIds);
+          (directKids ?? []).forEach((k: any) => {
+            visibleKidIds.add(k.id); nameById[k.id] = k.full_name;
+          });
+        }
+      }
+
+      const ckIds = Array.from(visibleKidIds);
+      if (ckIds.length) {
+        // For classmates we need shared_with_class=true; for direct shares the
+        // invite itself implies access (RLS doesn't allow us to read those yet,
+        // so we still rely on shared_with_class for now).
+        const { data: cRegs } = await supabase
+          .from("registrations")
+          .select("*")
+          .in("kid_id", ckIds)
+          .eq("shared_with_class", true);
+        setClassmateRegs((cRegs ?? []).map((r: any) => ({ ...r, kid_name: nameById[r.kid_id] })));
+
+        const extraIds = (cRegs ?? []).map((r: any) => r.session_id).filter((id: string) => !baseSessMap[id]);
+        if (extraIds.length) {
+          const { data: extra } = await supabase
+            .from("camp_sessions")
+            .select("id,title,start_date,end_date,registration_url,location")
+            .in("id", extraIds);
+          setSessMap((prev) => {
+            const m = { ...prev };
+            (extra ?? []).forEach((s) => { m[s.id] = s as Sess; });
+            return m;
+          });
         }
       } else {
         setClassmateRegs([]);
@@ -199,6 +225,7 @@ function ParentDashboard() {
           regs={regs}
           sessMap={sessMap}
           kids={kids}
+          classmateRegs={classmateRegs}
           vacations={vacations}
           onAdd={() => setVacOpen(true)}
           onDeleteVacation={async (id: string) => {
@@ -681,16 +708,18 @@ function rangesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: strin
 }
 
 function SummerCalendar({
-  regs, sessMap, kids, vacations, onAdd, onDeleteVacation, onQuickToggleWeek,
+  regs, sessMap, kids, classmateRegs, vacations, onAdd, onDeleteVacation, onQuickToggleWeek,
 }: {
   regs: Reg[];
   sessMap: Record<string, Sess>;
   kids: Kid[];
+  classmateRegs: (Reg & { kid_name?: string })[];
   vacations: Vacation[];
   onAdd: () => void;
   onDeleteVacation: (id: string) => void;
   onQuickToggleWeek: (start: string, end: string) => void;
 }) {
+  const [openWeek, setOpenWeek] = useState<string | null>(null);
   return (
     <section className="mb-12">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -702,7 +731,7 @@ function SummerCalendar({
         </Button>
       </div>
       <p className="mb-4 text-sm text-muted-foreground">
-        Tap a week to mark it as a travel week (no camp needed). Use “Add vacation” for longer trips.
+        Tap a week to mark it as a travel week (no camp needed). Use “Add vacation” for longer trips. Tap “Friends this week” to see what classmates and shared friends are up to.
       </p>
 
       <div className="space-y-2">
@@ -711,9 +740,14 @@ function SummerCalendar({
             const s = sessMap[r.session_id];
             return s && rangesOverlap(s.start_date, s.end_date, w.start, w.end);
           });
+          const weekFriends = classmateRegs.filter((r) => {
+            const s = sessMap[r.session_id];
+            return s && rangesOverlap(s.start_date, s.end_date, w.start, w.end);
+          });
           const vacs = vacations.filter((v) => rangesOverlap(v.start_date, v.end_date, w.start, w.end));
           const isFullWeekTravel = vacs.some((v) => v.start_date === w.start && v.end_date === w.end);
           const onVacation = vacs.length > 0;
+          const isOpen = openWeek === w.start;
 
           return (
             <div
@@ -767,6 +801,39 @@ function SummerCalendar({
                       ))}
                     </div>
                   )}
+
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => setOpenWeek(isOpen ? null : w.start)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-foreground hover:bg-accent"
+                    >
+                      <Users className="h-3.5 w-3.5" />
+                      Friends this week ({weekFriends.length})
+                      <span className={`transition ${isOpen ? "rotate-180" : ""}`}>▾</span>
+                    </button>
+                    {isOpen && (
+                      <div className="mt-2 rounded-xl border border-border bg-background/60 p-3">
+                        {weekFriends.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">No friends have shared activities this week yet.</p>
+                        ) : (
+                          <ul className="space-y-1 text-sm">
+                            {weekFriends.map((r) => {
+                              const s = sessMap[r.session_id];
+                              return (
+                                <li key={r.id} className="flex items-center gap-2">
+                                  <span className={`h-1.5 w-1.5 rounded-full ${r.status === "registered" ? "bg-primary" : "bg-accent-foreground/60"}`} />
+                                  <span className="font-medium">{r.kid_name ?? "Friend"}</span>
+                                  <span className="text-muted-foreground">· {s?.title ?? "Camp"}</span>
+                                  <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">{r.status}</span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <Button
