@@ -89,7 +89,11 @@ function ParentDashboard() {
       }
       setSessMap(baseSessMap);
 
-      // Classmate registrations — fetch in two steps to avoid embed dependency
+      // Visible kids = classmates of my kids (where they share with class)
+      // PLUS kids directly shared with me via share_invites (by my email).
+      const visibleKidIds = new Set<string>();
+      const nameById: Record<string, string> = {};
+
       const myClassIds = (kidsData ?? []).map((k) => k.class_id).filter(Boolean) as string[];
       if (myClassIds.length) {
         const { data: classmateKids } = await supabase
@@ -97,31 +101,53 @@ function ParentDashboard() {
           .select("id, full_name, class_id")
           .in("class_id", myClassIds)
           .neq("parent_id", user.id);
-        const ckIds = (classmateKids ?? []).map((k: any) => k.id);
-        if (ckIds.length) {
-          const { data: cRegs } = await supabase
-            .from("registrations")
-            .select("*")
-            .in("kid_id", ckIds)
-            .eq("shared_with_class", true);
-          const nameById: Record<string, string> = {};
-          (classmateKids ?? []).forEach((k: any) => { nameById[k.id] = k.full_name; });
-          setClassmateRegs((cRegs ?? []).map((r: any) => ({ ...r, kid_name: nameById[r.kid_id] })));
+        (classmateKids ?? []).forEach((k: any) => {
+          if (k.id) { visibleKidIds.add(k.id); nameById[k.id] = k.full_name; }
+        });
+      }
 
-          const extraIds = (cRegs ?? []).map((r: any) => r.session_id).filter((id: string) => !baseSessMap[id]);
-          if (extraIds.length) {
-            const { data: extra } = await supabase
-              .from("camp_sessions")
-              .select("id,title,start_date,end_date,registration_url,location")
-              .in("id", extraIds);
-            setSessMap((prev) => {
-              const m = { ...prev };
-              (extra ?? []).forEach((s) => { m[s.id] = s as Sess; });
-              return m;
-            });
-          }
-        } else {
-          setClassmateRegs([]);
+      // Direct share invites addressed to me
+      if (user.email) {
+        const { data: invites } = await supabase
+          .from("share_invites")
+          .select("kid_id")
+          .eq("invitee_email", user.email)
+          .not("kid_id", "is", null);
+        const directIds = (invites ?? []).map((i: any) => i.kid_id).filter(Boolean);
+        if (directIds.length) {
+          const { data: directKids } = await supabase
+            .from("kids")
+            .select("id, full_name")
+            .in("id", directIds);
+          (directKids ?? []).forEach((k: any) => {
+            visibleKidIds.add(k.id); nameById[k.id] = k.full_name;
+          });
+        }
+      }
+
+      const ckIds = Array.from(visibleKidIds);
+      if (ckIds.length) {
+        // For classmates we need shared_with_class=true; for direct shares the
+        // invite itself implies access (RLS doesn't allow us to read those yet,
+        // so we still rely on shared_with_class for now).
+        const { data: cRegs } = await supabase
+          .from("registrations")
+          .select("*")
+          .in("kid_id", ckIds)
+          .eq("shared_with_class", true);
+        setClassmateRegs((cRegs ?? []).map((r: any) => ({ ...r, kid_name: nameById[r.kid_id] })));
+
+        const extraIds = (cRegs ?? []).map((r: any) => r.session_id).filter((id: string) => !baseSessMap[id]);
+        if (extraIds.length) {
+          const { data: extra } = await supabase
+            .from("camp_sessions")
+            .select("id,title,start_date,end_date,registration_url,location")
+            .in("id", extraIds);
+          setSessMap((prev) => {
+            const m = { ...prev };
+            (extra ?? []).forEach((s) => { m[s.id] = s as Sess; });
+            return m;
+          });
         }
       } else {
         setClassmateRegs([]);
