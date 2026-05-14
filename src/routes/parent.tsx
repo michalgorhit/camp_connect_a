@@ -32,7 +32,7 @@ type Kid = {
 type School = { id: string; name: string; city: string | null };
 type Klass = { id: string; school_id: string; name: string; grade: string | null };
 type Reg = { id: string; kid_id: string; session_id: string; status: string; shared_with_class: boolean };
-type Sess = { id: string; title: string; start_date: string; end_date: string; registration_url: string | null; location?: string | null };
+type Sess = { id: string; title: string; start_date: string; end_date: string; registration_url: string | null; location?: string | null; price_cents?: number | null };
 type Vacation = { id: string; start_date: string; end_date: string; kind: string; label: string | null };
 
 function ParentDashboard() {
@@ -83,7 +83,7 @@ function ParentDashboard() {
       if (sessIds.length) {
         const { data: ss } = await supabase
           .from("camp_sessions")
-          .select("id,title,start_date,end_date,registration_url,location")
+          .select("id,title,start_date,end_date,registration_url,location,price_cents")
           .in("id", sessIds);
         (ss ?? []).forEach((s) => { baseSessMap[s.id] = s as Sess; });
       }
@@ -127,21 +127,19 @@ function ParentDashboard() {
 
       const ckIds = Array.from(visibleKidIds);
       if (ckIds.length) {
-        // For classmates we need shared_with_class=true; for direct shares the
-        // invite itself implies access (RLS doesn't allow us to read those yet,
-        // so we still rely on shared_with_class for now).
+        // Show ALL camps these visible friends are registered/interested in
+        // (not just per-registration shared flag). Access is gated by RLS.
         const { data: cRegs } = await supabase
           .from("registrations")
           .select("*")
-          .in("kid_id", ckIds)
-          .eq("shared_with_class", true);
+          .in("kid_id", ckIds);
         setClassmateRegs((cRegs ?? []).map((r: any) => ({ ...r, kid_name: nameById[r.kid_id] })));
 
         const extraIds = (cRegs ?? []).map((r: any) => r.session_id).filter((id: string) => !baseSessMap[id]);
         if (extraIds.length) {
           const { data: extra } = await supabase
             .from("camp_sessions")
-            .select("id,title,start_date,end_date,registration_url,location")
+            .select("id,title,start_date,end_date,registration_url,location,price_cents")
             .in("id", extraIds);
           setSessMap((prev) => {
             const m = { ...prev };
@@ -817,14 +815,20 @@ function SummerCalendar({
                         {weekFriends.length === 0 ? (
                           <p className="text-xs text-muted-foreground">No friends have shared activities this week yet.</p>
                         ) : (
-                          <ul className="space-y-1 text-sm">
+                          <ul className="space-y-1.5 text-sm">
                             {weekFriends.map((r) => {
                               const s = sessMap[r.session_id];
+                              const withMe = regs.some((mine) => mine.session_id === r.session_id);
+                              const price = s?.price_cents != null ? `$${(s.price_cents / 100).toFixed(0)}` : null;
                               return (
-                                <li key={r.id} className="flex items-center gap-2">
+                                <li key={r.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
                                   <span className={`h-1.5 w-1.5 rounded-full ${r.status === "registered" ? "bg-primary" : "bg-accent-foreground/60"}`} />
                                   <span className="font-medium">{r.kid_name ?? "Friend"}</span>
                                   <span className="text-muted-foreground">· {s?.title ?? "Camp"}</span>
+                                  {price && <span className="text-xs text-muted-foreground">· {price}</span>}
+                                  {withMe && (
+                                    <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">With me</span>
+                                  )}
                                   <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">{r.status}</span>
                                 </li>
                               );
