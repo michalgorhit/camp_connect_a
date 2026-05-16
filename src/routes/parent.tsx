@@ -513,12 +513,11 @@ function RegisterDialog({
 }: { open: boolean; onOpenChange: (v: boolean) => void; session: Sess | null; kids: Kid[]; onSaved: () => void }) {
   const { user } = useAuth();
   const [kidId, setKidId] = useState<string>("");
-  const [share, setShare] = useState(true);
   const [status, setStatus] = useState<"interested" | "registered">("interested");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) { setKidId(kids[0]?.id ?? ""); setShare(true); setStatus("interested"); }
+    if (open) { setKidId(kids[0]?.id ?? ""); setStatus("interested"); }
   }, [open, kids]);
 
   if (!session) return null;
@@ -528,7 +527,7 @@ function RegisterDialog({
     if (!user || !kidId) return;
     setSaving(true);
     const { error } = await supabase.from("registrations").upsert({
-      kid_id: kidId, session_id: session.id, parent_id: user.id, status, shared_with_class: share,
+      kid_id: kidId, session_id: session.id, parent_id: user.id, status,
     }, { onConflict: "kid_id,session_id" });
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -570,13 +569,6 @@ function RegisterDialog({
                   : "You've completed the signup on the camp's site."}
               </p>
             </div>
-            <label className="flex items-start gap-3 rounded-lg bg-muted p-3">
-              <Checkbox checked={share} onCheckedChange={(v) => setShare(!!v)} className="mt-0.5" />
-              <span className="text-sm">
-                <span className="font-medium">Share with classmates</span>
-                <span className="block text-muted-foreground">Other parents in their class will see this.</span>
-              </span>
-            </label>
             {session.registration_url && status === "interested" && (
               <p className="rounded-lg bg-accent/40 p-3 text-sm text-accent-foreground">
                 Don't forget to complete the signup on the camp's website when you're ready.
