@@ -593,27 +593,83 @@ function RegisterDialog({
 }
 
 function KidShareDialog({
-  open, onOpenChange, kidId, kidName,
-}: { open: boolean; onOpenChange: (v: boolean) => void; kidId: string | null; kidName: string }) {
+  open, onOpenChange, kidId, kidName, classId, klass, onChanged,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  kidId: string | null;
+  kidName: string;
+  classId: string | null;
+  klass: Klass | null;
+  onChanged: () => void;
+}) {
   const { user } = useAuth();
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
+  const [shareWithClass, setShareWithClass] = useState(false);
+  const [invites, setInvites] = useState<ShareInvite[]>([]);
+  const [classKids, setClassKids] = useState<Kid[]>([]);
+
+  const loadSharing = async () => {
+    if (!user || !kidId) return;
+    const [{ data: kid }, { data: inviteRows }, classRows] = await Promise.all([
+      supabase.from("kids").select("share_with_class").eq("id", kidId).single(),
+      supabase
+        .from("share_invites")
+        .select("id,invitee_email,accepted_at,accepted_by,token")
+        .eq("kid_id", kidId)
+        .eq("inviter_id", user.id)
+        .order("created_at", { ascending: false }),
+      classId
+        ? supabase.from("kids").select("id,full_name,grade,school_id,class_id,share_with_class,parent_id").eq("class_id", classId).neq("parent_id", user.id)
+        : Promise.resolve({ data: [] }),
+    ]);
+    setShareWithClass(!!kid?.share_with_class);
+    setInvites((inviteRows ?? []) as ShareInvite[]);
+    setClassKids((classRows.data ?? []) as Kid[]);
+  };
+
+  useEffect(() => {
+    if (open) loadSharing();
+  }, [open, kidId, classId]);
+
+  const toggleClassShare = async (checked: boolean) => {
+    if (!kidId) return;
+    setShareWithClass(checked);
+    const { error } = await supabase.from("kids").update({ share_with_class: checked }).eq("id", kidId);
+    if (error) {
+      toast.error(error.message);
+      setShareWithClass(!checked);
+      return;
+    }
+    toast.success(checked ? "Shared with class" : "Class sharing turned off");
+    onChanged();
+  };
+
+  const revokeInvite = async (id: string) => {
+    const { error } = await supabase.from("share_invites").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Invite removed");
+    loadSharing();
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !kidId) return;
     setSending(true);
+    const inviteeEmail = email.trim().toLowerCase();
     const { data, error } = await supabase
       .from("share_invites")
-      .insert({ kid_id: kidId, inviter_id: user.id, invitee_email: email })
+      .insert({ kid_id: kidId, inviter_id: user.id, invitee_email: inviteeEmail })
       .select()
       .single();
     setSending(false);
     if (error) return toast.error(error.message);
-    const link = `${window.location.origin}/sessions?invite=${data.token}`;
+    const link = `${window.location.origin}/parent?invite=${data.token}`;
     await navigator.clipboard.writeText(link).catch(() => {});
     toast.success("Invite link copied — share it with your friend!");
     setEmail("");
-    onOpenChange(false);
+    loadSharing();
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
