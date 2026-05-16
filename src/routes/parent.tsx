@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/parent")({
-  validateSearch: z.object({ session: z.string().optional() }),
+  validateSearch: z.object({ session: z.string().optional(), invite: z.string().optional() }),
   component: () => (
     <RequireAuth role="parent">
       <ParentDashboard />
@@ -31,9 +31,10 @@ type Kid = {
 };
 type School = { id: string; name: string; city: string | null };
 type Klass = { id: string; school_id: string; name: string; grade: string | null };
-type Reg = { id: string; kid_id: string; session_id: string; status: string; shared_with_class: boolean };
+type Reg = { id: string; kid_id: string; session_id: string; status: string };
 type Sess = { id: string; title: string; start_date: string; end_date: string; registration_url: string | null; location?: string | null; price_cents?: number | null };
 type Vacation = { id: string; start_date: string; end_date: string; kind: string; label: string | null };
+type ShareInvite = { id: string; invitee_email: string; accepted_at: string | null; accepted_by: string | null; token: string };
 
 function ParentDashboard() {
   const { user } = useAuth();
@@ -50,6 +51,7 @@ function ParentDashboard() {
   const [pendingSession, setPendingSession] = useState<Sess | null>(null);
   const [shareKidId, setShareKidId] = useState<string | null>(null);
   const [shareKidName, setShareKidName] = useState<string>("");
+  const [shareKidClassId, setShareKidClassId] = useState<string | null>(null);
   const [vacations, setVacations] = useState<Vacation[]>([]);
   const [vacOpen, setVacOpen] = useState(false);
 
@@ -106,13 +108,20 @@ function ParentDashboard() {
         });
       }
 
-      // Direct share invites addressed to me
       if (user.email) {
-        const { data: invites } = await supabase
+        await supabase
+          .from("share_invites")
+          .update({ accepted_by: user.id, accepted_at: new Date().toISOString() })
+          .ilike("invitee_email", user.email)
+          .is("accepted_by", null);
+
+        // Direct child-level share invites addressed to me.
+        let inviteQuery = supabase
           .from("share_invites")
           .select("kid_id")
-          .eq("invitee_email", user.email)
-          .not("kid_id", "is", null);
+          .ilike("invitee_email", user.email);
+        if (search.invite) inviteQuery = inviteQuery.eq("token", search.invite);
+        const { data: invites } = await inviteQuery;
         const directIds = (invites ?? []).map((i: any) => i.kid_id).filter(Boolean);
         if (directIds.length) {
           const { data: directKids } = await supabase
@@ -207,7 +216,9 @@ function ParentDashboard() {
                         {k.share_with_class && <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs text-accent-foreground"><Users className="h-3 w-3" /> Shares with class</span>}
                       </div>
                       <div className="flex gap-1">
-                        <Button size="sm" variant="ghost" onClick={() => { setShareKidId(k.id); setShareKidName(k.full_name); }}><Share2 className="h-4 w-4" /></Button>
+                        <Button size="sm" variant="outline" onClick={() => { setShareKidId(k.id); setShareKidName(k.full_name); setShareKidClassId(k.class_id); }}>
+                          <Share2 className="h-4 w-4" /> Manage sharing
+                        </Button>
                         <Button size="sm" variant="ghost" onClick={() => { setEditingKid(k); setKidOpen(true); }}>Edit</Button>
                         <Button size="sm" variant="ghost" onClick={() => deleteKid(k.id)}><Trash2 className="h-4 w-4" /></Button>
                       </div>
@@ -306,6 +317,9 @@ function ParentDashboard() {
           onOpenChange={(v: boolean) => { if (!v) setShareKidId(null); }}
           kidId={shareKidId}
           kidName={shareKidName}
+          classId={shareKidClassId}
+          klass={classes.find((c) => c.id === shareKidClassId) ?? null}
+          onChanged={load}
         />
 
         <VacationDialog
@@ -319,12 +333,6 @@ function ParentDashboard() {
 }
 
 function RegRow({ reg, session, kidName, onChange }: { reg: Reg; session: Sess; kidName: string; onChange: () => void }) {
-  const [shareOpen, setShareOpen] = useState(false);
-  const toggleShared = async () => {
-    const { error } = await supabase.from("registrations").update({ shared_with_class: !reg.shared_with_class }).eq("id", reg.id);
-    if (error) return toast.error(error.message);
-    onChange();
-  };
   const remove = async () => {
     if (!confirm("Remove registration?")) return;
     await supabase.from("registrations").delete().eq("id", reg.id);
@@ -368,10 +376,6 @@ function RegRow({ reg, session, kidName, onChange }: { reg: Reg; session: Sess; 
             Registered
           </button>
         </div>
-        <Button size="sm" variant={reg.shared_with_class ? "sun" : "outline"} onClick={toggleShared}>
-          <Users className="h-4 w-4" /> {reg.shared_with_class ? "Sharing with class" : "Share with class"}
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => setShareOpen(true)}><Share2 className="h-4 w-4" /> Invite friend</Button>
         {session.registration_url && reg.status !== "registered" && (
           <a href={session.registration_url} target="_blank" rel="noreferrer">
             <Button size="sm" variant="hero">Complete <ExternalLink className="h-3.5 w-3.5" /></Button>
@@ -379,46 +383,7 @@ function RegRow({ reg, session, kidName, onChange }: { reg: Reg; session: Sess; 
         )}
         <Button size="sm" variant="ghost" onClick={remove}><Trash2 className="h-4 w-4" /></Button>
       </div>
-      <InviteDialog open={shareOpen} onOpenChange={setShareOpen} regId={reg.id} sessionTitle={session.title} />
     </article>
-  );
-}
-
-function InviteDialog({ open, onOpenChange, regId, sessionTitle }: { open: boolean; onOpenChange: (v: boolean) => void; regId: string; sessionTitle: string }) {
-  const { user } = useAuth();
-  const [email, setEmail] = useState("");
-  const [sending, setSending] = useState(false);
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    setSending(true);
-    const { data, error } = await supabase.from("share_invites").insert({ registration_id: regId, inviter_id: user.id, invitee_email: email }).select().single();
-    setSending(false);
-    if (error) return toast.error(error.message);
-    const link = `${window.location.origin}/sessions?invite=${data.token}`;
-    await navigator.clipboard.writeText(link).catch(() => {});
-    toast.success("Invite created — link copied to clipboard");
-    setEmail("");
-    onOpenChange(false);
-  };
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="font-display">Invite a friend to {sessionTitle}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={submit} className="space-y-3">
-          <div>
-            <Label>Friend's parent email</Label>
-            <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="parent@example.com" />
-            <p className="mt-1 text-xs text-muted-foreground">We'll create a link you can share with them.</p>
-          </div>
-          <DialogFooter>
-            <Button type="submit" variant="hero" disabled={sending}><Mail className="h-4 w-4" /> Create invite</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }
 
@@ -556,12 +521,11 @@ function RegisterDialog({
 }: { open: boolean; onOpenChange: (v: boolean) => void; session: Sess | null; kids: Kid[]; onSaved: () => void }) {
   const { user } = useAuth();
   const [kidId, setKidId] = useState<string>("");
-  const [share, setShare] = useState(true);
   const [status, setStatus] = useState<"interested" | "registered">("interested");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) { setKidId(kids[0]?.id ?? ""); setShare(true); setStatus("interested"); }
+    if (open) { setKidId(kids[0]?.id ?? ""); setStatus("interested"); }
   }, [open, kids]);
 
   if (!session) return null;
@@ -571,7 +535,7 @@ function RegisterDialog({
     if (!user || !kidId) return;
     setSaving(true);
     const { error } = await supabase.from("registrations").upsert({
-      kid_id: kidId, session_id: session.id, parent_id: user.id, status, shared_with_class: share,
+      kid_id: kidId, session_id: session.id, parent_id: user.id, status,
     }, { onConflict: "kid_id,session_id" });
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -613,13 +577,6 @@ function RegisterDialog({
                   : "You've completed the signup on the camp's site."}
               </p>
             </div>
-            <label className="flex items-start gap-3 rounded-lg bg-muted p-3">
-              <Checkbox checked={share} onCheckedChange={(v) => setShare(!!v)} className="mt-0.5" />
-              <span className="text-sm">
-                <span className="font-medium">Share with classmates</span>
-                <span className="block text-muted-foreground">Other parents in their class will see this.</span>
-              </span>
-            </label>
             {session.registration_url && status === "interested" && (
               <p className="rounded-lg bg-accent/40 p-3 text-sm text-accent-foreground">
                 Don't forget to complete the signup on the camp's website when you're ready.
@@ -636,35 +593,139 @@ function RegisterDialog({
 }
 
 function KidShareDialog({
-  open, onOpenChange, kidId, kidName,
-}: { open: boolean; onOpenChange: (v: boolean) => void; kidId: string | null; kidName: string }) {
+  open, onOpenChange, kidId, kidName, classId, klass, onChanged,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  kidId: string | null;
+  kidName: string;
+  classId: string | null;
+  klass: Klass | null;
+  onChanged: () => void;
+}) {
   const { user } = useAuth();
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
+  const [shareWithClass, setShareWithClass] = useState(false);
+  const [invites, setInvites] = useState<ShareInvite[]>([]);
+  const [classKids, setClassKids] = useState<Kid[]>([]);
+
+  const loadSharing = async () => {
+    if (!user || !kidId) return;
+    const [{ data: kid }, { data: inviteRows }, classRows] = await Promise.all([
+      supabase.from("kids").select("share_with_class").eq("id", kidId).single(),
+      supabase
+        .from("share_invites")
+        .select("id,invitee_email,accepted_at,accepted_by,token")
+        .eq("kid_id", kidId)
+        .eq("inviter_id", user.id)
+        .order("created_at", { ascending: false }),
+      classId
+        ? supabase.from("kids").select("id,full_name,grade,school_id,class_id,share_with_class,parent_id").eq("class_id", classId).neq("parent_id", user.id)
+        : Promise.resolve({ data: [] }),
+    ]);
+    setShareWithClass(!!kid?.share_with_class);
+    setInvites((inviteRows ?? []) as ShareInvite[]);
+    setClassKids((classRows.data ?? []) as Kid[]);
+  };
+
+  useEffect(() => {
+    if (open) loadSharing();
+  }, [open, kidId, classId]);
+
+  const toggleClassShare = async (checked: boolean) => {
+    if (!kidId) return;
+    setShareWithClass(checked);
+    const { error } = await supabase.from("kids").update({ share_with_class: checked }).eq("id", kidId);
+    if (error) {
+      toast.error(error.message);
+      setShareWithClass(!checked);
+      return;
+    }
+    toast.success(checked ? "Shared with class" : "Class sharing turned off");
+    onChanged();
+  };
+
+  const revokeInvite = async (id: string) => {
+    const { error } = await supabase.from("share_invites").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Invite removed");
+    loadSharing();
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !kidId) return;
     setSending(true);
+    const inviteeEmail = email.trim().toLowerCase();
     const { data, error } = await supabase
       .from("share_invites")
-      .insert({ kid_id: kidId, inviter_id: user.id, invitee_email: email })
+      .insert({ kid_id: kidId, inviter_id: user.id, invitee_email: inviteeEmail })
       .select()
       .single();
     setSending(false);
     if (error) return toast.error(error.message);
-    const link = `${window.location.origin}/sessions?invite=${data.token}`;
+    const link = `${window.location.origin}/parent?invite=${data.token}`;
     await navigator.clipboard.writeText(link).catch(() => {});
     toast.success("Invite link copied — share it with your friend!");
     setEmail("");
-    onOpenChange(false);
+    loadSharing();
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="font-display">Share {kidName}'s camps with a friend</DialogTitle>
+          <DialogTitle className="font-display">Shared with: {kidName}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={submit} className="space-y-3">
+        <div className="space-y-4">
+          <section className="rounded-xl border border-border bg-muted/40 p-3">
+            <label className="flex items-start gap-3">
+              <Checkbox checked={shareWithClass} onCheckedChange={(v) => toggleClassShare(!!v)} className="mt-0.5" />
+              <span className="text-sm">
+                <span className="font-medium">Share with {klass?.name ?? "class"}</span>
+                <span className="block text-muted-foreground">Parents with kids in this class can see {kidName}'s camp activities.</span>
+              </span>
+            </label>
+            {shareWithClass && (
+              <div className="mt-3 rounded-lg bg-card p-3 text-sm">
+                <p className="font-medium">Class</p>
+                <p className="text-muted-foreground">{klass ? `${klass.name}${klass.grade ? ` · ${klass.grade}` : ""}` : "No class selected"}</p>
+                {classKids.length > 0 && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Visible to classmates including {classKids.slice(0, 4).map((k) => k.full_name).join(", ")}{classKids.length > 4 ? ` +${classKids.length - 4} more` : ""}.
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
+
+          <section>
+            <h3 className="mb-2 text-sm font-semibold">Direct parent shares</h3>
+            {invites.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-border p-3 text-sm text-muted-foreground">No direct parent invites yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {invites.map((invite) => (
+                  <div key={invite.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card p-3 text-sm">
+                    <div>
+                      <p className="font-medium">{invite.invitee_email}</p>
+                      <p className="text-xs text-muted-foreground">{invite.accepted_at ? "Accepted" : "Pending"}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="button" size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(`${window.location.origin}/parent?invite=${invite.token}`).then(() => toast.success("Invite link copied"))}>
+                        Copy link
+                      </Button>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => revokeInvite(invite.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <form onSubmit={submit} className="space-y-3 rounded-xl border border-border p-3">
           <div>
             <Label>Friend's parent email</Label>
             <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="parent@example.com" />
@@ -673,7 +734,8 @@ function KidShareDialog({
           <DialogFooter>
             <Button type="submit" variant="hero" disabled={sending}><Mail className="h-4 w-4" /> Create invite</Button>
           </DialogFooter>
-        </form>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

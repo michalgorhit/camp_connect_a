@@ -245,7 +245,6 @@ export type Database = {
           kid_id: string
           parent_id: string
           session_id: string
-          shared_with_class: boolean
           status: string
         }
         Insert: {
@@ -254,7 +253,6 @@ export type Database = {
           kid_id: string
           parent_id: string
           session_id: string
-          shared_with_class?: boolean
           status?: string
         }
         Update: {
@@ -263,7 +261,6 @@ export type Database = {
           kid_id?: string
           parent_id?: string
           session_id?: string
-          shared_with_class?: boolean
           status?: string
         }
         Relationships: [
@@ -310,43 +307,35 @@ export type Database = {
       share_invites: {
         Row: {
           accepted_at: string | null
+          accepted_by: string | null
           created_at: string
           id: string
           invitee_email: string
           inviter_id: string
-          kid_id: string | null
-          registration_id: string | null
+          kid_id: string
           token: string
         }
         Insert: {
           accepted_at?: string | null
+          accepted_by?: string | null
           created_at?: string
           id?: string
           invitee_email: string
           inviter_id: string
-          kid_id?: string | null
-          registration_id?: string | null
+          kid_id: string
           token?: string
         }
         Update: {
           accepted_at?: string | null
+          accepted_by?: string | null
           created_at?: string
           id?: string
           invitee_email?: string
           inviter_id?: string
-          kid_id?: string | null
-          registration_id?: string | null
+          kid_id?: string
           token?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "share_invites_registration_id_fkey"
-            columns: ["registration_id"]
-            isOneToOne: false
-            referencedRelation: "registrations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_roles: {
         Row: {
