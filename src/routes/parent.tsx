@@ -675,9 +675,57 @@ function KidShareDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="font-display">Share {kidName}'s camps with a friend</DialogTitle>
+          <DialogTitle className="font-display">Shared with: {kidName}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={submit} className="space-y-3">
+        <div className="space-y-4">
+          <section className="rounded-xl border border-border bg-muted/40 p-3">
+            <label className="flex items-start gap-3">
+              <Checkbox checked={shareWithClass} onCheckedChange={(v) => toggleClassShare(!!v)} className="mt-0.5" />
+              <span className="text-sm">
+                <span className="font-medium">Share with {klass?.name ?? "class"}</span>
+                <span className="block text-muted-foreground">Parents with kids in this class can see {kidName}'s camp activities.</span>
+              </span>
+            </label>
+            {shareWithClass && (
+              <div className="mt-3 rounded-lg bg-card p-3 text-sm">
+                <p className="font-medium">Class</p>
+                <p className="text-muted-foreground">{klass ? `${klass.name}${klass.grade ? ` · ${klass.grade}` : ""}` : "No class selected"}</p>
+                {classKids.length > 0 && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Visible to classmates including {classKids.slice(0, 4).map((k) => k.full_name).join(", ")}{classKids.length > 4 ? ` +${classKids.length - 4} more` : ""}.
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
+
+          <section>
+            <h3 className="mb-2 text-sm font-semibold">Direct parent shares</h3>
+            {invites.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-border p-3 text-sm text-muted-foreground">No direct parent invites yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {invites.map((invite) => (
+                  <div key={invite.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card p-3 text-sm">
+                    <div>
+                      <p className="font-medium">{invite.invitee_email}</p>
+                      <p className="text-xs text-muted-foreground">{invite.accepted_at ? "Accepted" : "Pending"}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="button" size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(`${window.location.origin}/parent?invite=${invite.token}`).then(() => toast.success("Invite link copied"))}>
+                        Copy link
+                      </Button>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => revokeInvite(invite.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <form onSubmit={submit} className="space-y-3 rounded-xl border border-border p-3">
           <div>
             <Label>Friend's parent email</Label>
             <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="parent@example.com" />
@@ -686,7 +734,8 @@ function KidShareDialog({
           <DialogFooter>
             <Button type="submit" variant="hero" disabled={sending}><Mail className="h-4 w-4" /> Create invite</Button>
           </DialogFooter>
-        </form>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
