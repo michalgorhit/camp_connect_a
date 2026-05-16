@@ -31,9 +31,10 @@ type Kid = {
 };
 type School = { id: string; name: string; city: string | null };
 type Klass = { id: string; school_id: string; name: string; grade: string | null };
-type Reg = { id: string; kid_id: string; session_id: string; status: string; shared_with_class: boolean };
+type Reg = { id: string; kid_id: string; session_id: string; status: string };
 type Sess = { id: string; title: string; start_date: string; end_date: string; registration_url: string | null; location?: string | null; price_cents?: number | null };
 type Vacation = { id: string; start_date: string; end_date: string; kind: string; label: string | null };
+type ShareInvite = { id: string; invitee_email: string; accepted_at: string | null; accepted_by: string | null; token: string };
 
 function ParentDashboard() {
   const { user } = useAuth();
@@ -106,13 +107,18 @@ function ParentDashboard() {
         });
       }
 
-      // Direct share invites addressed to me
       if (user.email) {
+        await supabase
+          .from("share_invites")
+          .update({ accepted_by: user.id, accepted_at: new Date().toISOString() })
+          .ilike("invitee_email", user.email)
+          .is("accepted_by", null);
+
+        // Direct child-level share invites addressed to me.
         const { data: invites } = await supabase
           .from("share_invites")
           .select("kid_id")
-          .eq("invitee_email", user.email)
-          .not("kid_id", "is", null);
+          .ilike("invitee_email", user.email);
         const directIds = (invites ?? []).map((i: any) => i.kid_id).filter(Boolean);
         if (directIds.length) {
           const { data: directKids } = await supabase
