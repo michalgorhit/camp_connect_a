@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/parent")({
-  validateSearch: z.object({ session: z.string().optional() }),
+  validateSearch: z.object({ session: z.string().optional(), invite: z.string().optional() }),
   component: () => (
     <RequireAuth role="parent">
       <ParentDashboard />
@@ -51,6 +51,7 @@ function ParentDashboard() {
   const [pendingSession, setPendingSession] = useState<Sess | null>(null);
   const [shareKidId, setShareKidId] = useState<string | null>(null);
   const [shareKidName, setShareKidName] = useState<string>("");
+  const [shareKidClassId, setShareKidClassId] = useState<string | null>(null);
   const [vacations, setVacations] = useState<Vacation[]>([]);
   const [vacOpen, setVacOpen] = useState(false);
 
@@ -115,10 +116,12 @@ function ParentDashboard() {
           .is("accepted_by", null);
 
         // Direct child-level share invites addressed to me.
-        const { data: invites } = await supabase
+        let inviteQuery = supabase
           .from("share_invites")
           .select("kid_id")
           .ilike("invitee_email", user.email);
+        if (search.invite) inviteQuery = inviteQuery.eq("token", search.invite);
+        const { data: invites } = await inviteQuery;
         const directIds = (invites ?? []).map((i: any) => i.kid_id).filter(Boolean);
         if (directIds.length) {
           const { data: directKids } = await supabase
