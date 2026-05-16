@@ -325,12 +325,6 @@ function ParentDashboard() {
 }
 
 function RegRow({ reg, session, kidName, onChange }: { reg: Reg; session: Sess; kidName: string; onChange: () => void }) {
-  const [shareOpen, setShareOpen] = useState(false);
-  const toggleShared = async () => {
-    const { error } = await supabase.from("registrations").update({ shared_with_class: !reg.shared_with_class }).eq("id", reg.id);
-    if (error) return toast.error(error.message);
-    onChange();
-  };
   const remove = async () => {
     if (!confirm("Remove registration?")) return;
     await supabase.from("registrations").delete().eq("id", reg.id);
@@ -374,10 +368,6 @@ function RegRow({ reg, session, kidName, onChange }: { reg: Reg; session: Sess; 
             Registered
           </button>
         </div>
-        <Button size="sm" variant={reg.shared_with_class ? "sun" : "outline"} onClick={toggleShared}>
-          <Users className="h-4 w-4" /> {reg.shared_with_class ? "Sharing with class" : "Share with class"}
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => setShareOpen(true)}><Share2 className="h-4 w-4" /> Invite friend</Button>
         {session.registration_url && reg.status !== "registered" && (
           <a href={session.registration_url} target="_blank" rel="noreferrer">
             <Button size="sm" variant="hero">Complete <ExternalLink className="h-3.5 w-3.5" /></Button>
@@ -385,46 +375,7 @@ function RegRow({ reg, session, kidName, onChange }: { reg: Reg; session: Sess; 
         )}
         <Button size="sm" variant="ghost" onClick={remove}><Trash2 className="h-4 w-4" /></Button>
       </div>
-      <InviteDialog open={shareOpen} onOpenChange={setShareOpen} regId={reg.id} sessionTitle={session.title} />
     </article>
-  );
-}
-
-function InviteDialog({ open, onOpenChange, regId, sessionTitle }: { open: boolean; onOpenChange: (v: boolean) => void; regId: string; sessionTitle: string }) {
-  const { user } = useAuth();
-  const [email, setEmail] = useState("");
-  const [sending, setSending] = useState(false);
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    setSending(true);
-    const { data, error } = await supabase.from("share_invites").insert({ registration_id: regId, inviter_id: user.id, invitee_email: email }).select().single();
-    setSending(false);
-    if (error) return toast.error(error.message);
-    const link = `${window.location.origin}/sessions?invite=${data.token}`;
-    await navigator.clipboard.writeText(link).catch(() => {});
-    toast.success("Invite created — link copied to clipboard");
-    setEmail("");
-    onOpenChange(false);
-  };
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="font-display">Invite a friend to {sessionTitle}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={submit} className="space-y-3">
-          <div>
-            <Label>Friend's parent email</Label>
-            <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="parent@example.com" />
-            <p className="mt-1 text-xs text-muted-foreground">We'll create a link you can share with them.</p>
-          </div>
-          <DialogFooter>
-            <Button type="submit" variant="hero" disabled={sending}><Mail className="h-4 w-4" /> Create invite</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }
 
