@@ -1,78 +1,66 @@
-## Goals
+# Camps platform expansion
 
-1. Fix "Friends this week" so it actually shows friends' camps that overlap each week.
-2. Make sharing **per child**, not per (child + camp).
-3. Add a "Shared with" screen per child — classes and parent emails (with their kid names) I've shared that child with.
-4. End-to-end test the share-invite flow (invite → invitee sees the kid in their list).
+## 1. Database (one migration)
 
----
+- Add `'admin'` value to `app_role` enum.
+- Add columns to `camp_sessions`:
+  - `created_by uuid` (who added it)
+  - `source` text — `'vendor' | 'admin' | 'community'`
+  - `day_type` text — `'half_day' | 'full_day' | 'multi_week'`
+  - `capacity_known` bool (false when a parent adds it; admin/vendor flip true when setting capacity)
+- RLS updates:
+  - Anyone authenticated can INSERT a `camp_sessions` row (community-added, `capacity` forced NULL, `capacity_known=false`, `vendor_id = created_by`).
+  - Admins can SELECT/UPDATE/DELETE any session, view all registrations, and reassign `vendor_id`.
+  - Vendors keep current rights on rows where they are `vendor_id`.
+  - Only admin/vendor of the row can set `capacity` / `available_spots`.
+- Seed: grant `admin` role to `michalgorhit@gmail.com` (if the user exists; otherwise it gets granted on first sign-in via a small trigger or manual follow-up).
 
-## Why Friends this week is empty today
+## 2. Browse page (`/sessions`)
 
-Two real bugs:
+Add filter bar:
+- Age range slider (5–18)
+- Week picker (multi-select of summer 2026 weeks)
+- Length: Half-day / Full day / Multi-week (checkbox group)
+- Existing area search stays
 
-- `share_invites.invitee_email` is compared **case-sensitively** against `user.email` in `parent.tsx` (`.eq("invitee_email", user.email)`), but the RLS policy lowercases both sides. Auth emails come back capitalized as the user typed them, so the client query returns 0 invites even when RLS would allow it. → switch to `.ilike()` or store/compare lowercased.
-- The Friends list also depends on classmate visibility. Current data only seeds a few `share_invites` and a few `share_with_class=true` kids, so even when RLS works, most weeks legitimately have 0 friends. We'll seed more after the refactor so the feature is visibly populated.
+Each card shows the new "Community added — capacity unknown" pill when applicable.
 
----
+## 3. Parent flow — "Add a camp"
 
-## Schema changes (migration)
+New "Add a camp" button on `/sessions` and on the parent dashboard "Register" dialog. Flow:
+1. Type the camp name.
+2. Live search of existing `camp_sessions` by similar title (ilike + trigram-ish ordering) — user must scroll the matches before the "Create new" button enables.
+3. On create: insert with `source='community'`, `capacity_known=false`, `available_spots=null`, dates + location + age range + day_type from the form.
+4. Auto-register the parent's selected kid.
 
-```text
-registrations
-  - drop column shared_with_class      (sharing is no longer per-camp)
+## 4. Vendor dashboard (`/vendor`)
 
-share_invites
-  - drop column registration_id        (invites are always per-kid)
-  - kid_id: NOT NULL                   (enforce per-child invites)
-  - add accepted_by uuid (nullable)    (auth user id once accepted; lets us show their kid names)
-  - index (lower(invitee_email))
-  - unique (inviter_id, kid_id, lower(invitee_email))   (no dupe invites)
-```
+- List of their camps with per-camp interest/registered counts.
+- Edit dialog: capacity, available spots per week, dates, age range, day type, publish toggle.
+- "Claim camp" panel: shows community-added camps with similar names so vendor can request admin to attach them.
 
-RLS updates:
+## 5. Admin dashboard (`/admin`, new route)
 
-- `regs direct share view`: already keys on `share_invites.kid_id` + `invitee_email` — keep, just confirm lowercase compare.
-- Add `regs classmates view all`: already in place.
-- New: allow an inviter to see the invitee's kids that the invitee chose to share back. (Optional — for v1 we'll just show the invitee email + "accepted" status. We can defer cross-visibility of their kids.)
+- Guarded by `_authenticated` + admin role check.
+- Table of every camp: title, vendor (or "community"), dates, registered count, interested count, capacity.
+- Row actions: Edit, Assign vendor (dropdown of vendor profiles), Delete.
+- Top metrics: total camps, total registrations, total interest.
 
----
+## 6. Header / nav
 
-## App changes
+- Show "Admin" link when role includes admin.
+- Keep existing Parent / Vendor links.
 
-`src/routes/parent.tsx`
+## Technical notes
 
-- Remove the per-registration share toggle in `RegRow` (the "Share with class" button on each camp).
-- Remove the `shared_with_class` checkbox in `RegisterDialog`.
-- Replace `InviteDialog` (per-registration) with the existing per-kid `KidShareDialog` — already inserts `share_invites { kid_id, inviter_id, invitee_email }`.
-- Fix the visibility query: `.ilike("invitee_email", user.email)` (or store lowercased on insert + compare lowercased).
-- Expand the `KidShareDialog` into a **Shared-with manager** per kid that shows:
-  - **Class sharing**: checkbox bound to `kids.share_with_class`. If on, list the class name and (optionally) other kids in the class.
-  - **Direct invites**: table of `invitee_email`, status (pending / accepted), action to revoke (delete row).
-  - Form to add a new email invite + copy link.
-- Replace the small "Share2" icon button on each kid card with a "Manage sharing" button that opens this dialog.
+- All counts pulled via `createServerFn` with `requireSupabaseAuth` + admin check (uses `supabaseAdmin` for cross-user reads only inside admin fn after verifying role).
+- Vendor counts come from existing `regs vendor view own session` RLS — no admin client needed.
+- Filters are client-side over the existing fetched list (dataset is small).
+- "Similar camp name" search uses `ilike '%word%'` on each token; good enough at current data scale.
+- No changes to share/friends features.
 
-`accepted_by` wiring
+## Out of scope (not in this change)
 
-- Add a tiny effect in the parent dashboard: on load, find `share_invites` where `lower(invitee_email) = lower(user.email) AND accepted_by IS NULL` and update `accepted_by = user.id, accepted_at = now()`. This is what makes the invitee show up on the inviter's "Shared with" list as "accepted".
-
-`Test data` (after migration)
-
-- For each existing parent in the seed set, add a couple of cross-invites so the Shared-with screen has data.
-- For Michal's kid Hadar, ensure 3+ classmates (already present) have `share_with_class=true` and registrations across several weeks so multiple weeks light up "Friends this week".
-- Verify by querying as Michal (`supabase--read_query` simulating her auth via RLS isn't direct, but we can log in from the UI and verify).
-
----
-
-## Test checklist
-
-1. Log in as `mommaria@summerbuddy.test` → open `/parent` → expand "Friends this week" on a week where Hadar/Andre/Theo/Gabriel are registered → see their names + camp + price.
-2. Log in as Michal → open Hadar's "Manage sharing" dialog → see Mrs. Willis class listed + the test invite to `testfriend@summerbuddy.test`.
-3. From Michal's account, invite `mommaria@summerbuddy.test` for Hadar. Log out, log in as Maria → confirm Hadar appears under classmates/friends.
-4. Confirm the per-camp "Share with class" button is gone from each registration row.
-
----
-
-## Open question
-
-For the "Shared with" view, do you want the invitee's **own kid names** to appear back to you once they accept (requires them to opt in / requires us to expose their kid list via a controlled view), or just their **email + acceptance status** for now?
+- Email notifications when vendor claims a community camp.
+- Waitlist when capacity hits zero.
+- Per-week availability granularity beyond a single `available_spots` integer (multi-week camps still use one number).
