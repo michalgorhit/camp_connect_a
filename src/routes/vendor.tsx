@@ -278,7 +278,7 @@ function SessionDialog({
     title: "", description: "", location: "", postal_code: "",
     start_date: "", end_date: "", registration_deadline: "",
     price: "", age_min: "", age_max: "", capacity: "", available_spots: "",
-    registration_url: "",
+    registration_url: "", day_type: "full_day" as "half_day" | "full_day" | "multi_week",
   });
   const [saving, setSaving] = useState(false);
 
@@ -298,9 +298,10 @@ function SessionDialog({
         capacity: editing.capacity?.toString() ?? "",
         available_spots: editing.available_spots?.toString() ?? "",
         registration_url: editing.registration_url ?? "",
+        day_type: ((editing as any).day_type ?? "full_day"),
       });
     } else {
-      setForm({ title: "", description: "", location: "", postal_code: "", start_date: "", end_date: "", registration_deadline: "", price: "", age_min: "", age_max: "", capacity: "", available_spots: "", registration_url: "" });
+      setForm({ title: "", description: "", location: "", postal_code: "", start_date: "", end_date: "", registration_deadline: "", price: "", age_min: "", age_max: "", capacity: "", available_spots: "", registration_url: "", day_type: "full_day" });
     }
   }, [editing, open]);
 
@@ -308,8 +309,12 @@ function SessionDialog({
     e.preventDefault();
     if (!user) return;
     setSaving(true);
-    const payload = {
+    const payload: any = {
       vendor_id: user.id,
+      created_by: user.id,
+      source: "vendor",
+      capacity_known: true,
+      day_type: form.day_type,
       title: form.title,
       description: form.description || null,
       location: form.location || null,
@@ -359,6 +364,18 @@ function SessionDialog({
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Capacity</Label><Input type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })} /></div>
             <div><Label>Available spots</Label><Input type="number" value={form.available_spots} onChange={(e) => setForm({ ...form, available_spots: e.target.value })} /></div>
+          </div>
+          <div>
+            <Label>Length</Label>
+            <div className="mt-1 flex gap-2">
+              {(["half_day", "full_day", "multi_week"] as const).map((k) => (
+                <button key={k} type="button"
+                  onClick={() => setForm({ ...form, day_type: k })}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium ${form.day_type === k ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background"}`}>
+                  {k === "half_day" ? "Half-day" : k === "full_day" ? "Full day" : "Multi-week"}
+                </button>
+              ))}
+            </div>
           </div>
           <div>
             <Label>Registration URL (your site)</Label>
