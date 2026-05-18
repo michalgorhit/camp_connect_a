@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Sun, LogOut, Tent } from "lucide-react";
+import { Sun, LogOut, Tent, Shield } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 
@@ -7,6 +7,8 @@ export function SiteHeader() {
   const { user, roles, signOut } = useAuth();
   const navigate = useNavigate();
   const isVendor = roles.includes("vendor");
+  const isAdmin = roles.includes("admin");
+  const dashHref = isAdmin ? "/admin" : isVendor ? "/vendor" : "/parent";
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -23,8 +25,13 @@ export function SiteHeader() {
             Browse camps
           </Link>
           {user && (
-            <Link to={isVendor ? "/vendor" : "/parent"} className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground">
+            <Link to={dashHref} className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground">
               Dashboard
+            </Link>
+          )}
+          {isAdmin && (
+            <Link to="/admin" className="rounded-lg px-3 py-2 text-sm font-medium text-primary hover:text-primary">
+              Admin
             </Link>
           )}
         </nav>
@@ -32,7 +39,15 @@ export function SiteHeader() {
         <div className="flex items-center gap-2">
           {user ? (
             <>
-              <Link to={isVendor ? "/vendor" : "/parent"}>
+              {isAdmin && (
+                <Link to="/admin" className="hidden sm:inline-flex">
+                  <Button variant="ghost" size="sm">
+                    <Shield className="h-4 w-4" />
+                    Admin
+                  </Button>
+                </Link>
+              )}
+              <Link to={dashHref}>
                 <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
                   <Tent className="h-4 w-4" />
                   My camps
