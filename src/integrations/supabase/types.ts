@@ -20,7 +20,10 @@ export type Database = {
           age_min: number | null
           available_spots: number | null
           capacity: number | null
+          capacity_known: boolean
           created_at: string
+          created_by: string | null
+          day_type: string
           description: string | null
           end_date: string
           id: string
@@ -31,6 +34,7 @@ export type Database = {
           price_cents: number | null
           registration_deadline: string | null
           registration_url: string | null
+          source: string
           source_url: string | null
           start_date: string
           title: string
@@ -42,7 +46,10 @@ export type Database = {
           age_min?: number | null
           available_spots?: number | null
           capacity?: number | null
+          capacity_known?: boolean
           created_at?: string
+          created_by?: string | null
+          day_type?: string
           description?: string | null
           end_date: string
           id?: string
@@ -53,6 +60,7 @@ export type Database = {
           price_cents?: number | null
           registration_deadline?: string | null
           registration_url?: string | null
+          source?: string
           source_url?: string | null
           start_date: string
           title: string
@@ -64,7 +72,10 @@ export type Database = {
           age_min?: number | null
           available_spots?: number | null
           capacity?: number | null
+          capacity_known?: boolean
           created_at?: string
+          created_by?: string | null
+          day_type?: string
           description?: string | null
           end_date?: string
           id?: string
@@ -75,6 +86,7 @@ export type Database = {
           price_cents?: number | null
           registration_deadline?: string | null
           registration_url?: string | null
+          source?: string
           source_url?: string | null
           start_date?: string
           title?: string
