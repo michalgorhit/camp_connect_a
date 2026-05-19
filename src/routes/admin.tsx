@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Trash2, Users, Tent } from "lucide-react";
+import { Trash2, Users, Tent, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/SiteHeader";
 import { RequireAuth } from "@/components/RequireAuth";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { SessionDialog } from "@/components/SessionDialog";
 
 type Sess = {
   id: string;
@@ -44,6 +45,8 @@ function AdminDashboard() {
   const [counts, setCounts] = useState<Record<string, { interested: number; registered: number }>>({});
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
 
   const load = async () => {
     setLoading(true);
@@ -111,9 +114,14 @@ function AdminDashboard() {
     <div className="min-h-screen bg-gradient-meadow">
       <SiteHeader />
       <main className="mx-auto max-w-6xl px-4 py-12">
-        <header className="mb-6">
-          <h1 className="font-display text-4xl font-bold tracking-tight">Admin</h1>
-          <p className="mt-2 text-muted-foreground">Full picture across every camp.</p>
+        <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="font-display text-4xl font-bold tracking-tight">Admin</h1>
+            <p className="mt-2 text-muted-foreground">Full picture across every camp.</p>
+          </div>
+          <Button variant="hero" size="lg" onClick={() => { setEditing(null); setOpen(true); }}>
+            <Plus className="h-5 w-5" /> New session
+          </Button>
         </header>
 
         <div className="mb-6 grid gap-3 sm:grid-cols-3">
@@ -193,6 +201,8 @@ function AdminDashboard() {
             </table>
           </div>
         )}
+
+        <SessionDialog open={open} onOpenChange={setOpen} editing={editing} onSaved={() => { setOpen(false); load(); }} />
       </main>
     </div>
   );
