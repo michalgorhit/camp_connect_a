@@ -18,6 +18,7 @@
 ## 2. Browse page (`/sessions`)
 
 Add filter bar:
+
 - Age range slider (5–18)
 - Week picker (multi-select of summer 2026 weeks)
 - Length: Half-day / Full day / Multi-week (checkbox group)
@@ -28,6 +29,7 @@ Each card shows the new "Community added — capacity unknown" pill when applica
 ## 3. Parent flow — "Add a camp"
 
 New "Add a camp" button on `/sessions` and on the parent dashboard "Register" dialog. Flow:
+
 1. Type the camp name.
 2. Live search of existing `camp_sessions` by similar title (ilike + trigram-ish ordering) — user must scroll the matches before the "Create new" button enables.
 3. On create: insert with `source='community'`, `capacity_known=false`, `available_spots=null`, dates + location + age range + day_type from the form.

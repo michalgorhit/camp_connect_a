@@ -38,13 +38,18 @@ function AuthPage() {
   }, [user]);
 
   const ensureRole = async (uid: string, r: "parent" | "vendor") => {
-    await supabase.from("user_roles").upsert({ user_id: uid, role: r }, { onConflict: "user_id,role" });
+    await supabase
+      .from("user_roles")
+      .upsert({ user_id: uid, role: r }, { onConflict: "user_id,role" });
     if (r === "vendor") {
-      await supabase.from("profiles").update({
-        business_name: businessName || null,
-        business_location: businessLocation || null,
-        full_name: businessName || null,
-      }).eq("id", uid);
+      await supabase
+        .from("profiles")
+        .update({
+          business_name: businessName || null,
+          business_location: businessLocation || null,
+          full_name: businessName || null,
+        })
+        .eq("id", uid);
     } else if (fullName) {
       await supabase.from("profiles").update({ full_name: fullName }).eq("id", uid);
     }
@@ -76,7 +81,10 @@ function AuthPage() {
         await refreshRoles();
         // detect role
         if (data.user) {
-          const { data: r } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
+          const { data: r } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", data.user.id);
           const isVendor = (r ?? []).some((x) => x.role === "vendor");
           navigate({ to: isVendor ? "/vendor" : "/parent" });
         }
@@ -136,7 +144,9 @@ function AuthPage() {
             {mode === "signup" ? "Create your account" : "Welcome back"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "signup" ? "Join Summer Buddy Connect to find or run great camps." : "Sign in to manage your kids and camps."}
+            {mode === "signup"
+              ? "Join Summer Buddy Connect to find or run great camps."
+              : "Sign in to manage your kids and camps."}
           </p>
 
           {mode === "signup" && (
@@ -162,28 +172,57 @@ function AuthPage() {
             {mode === "signup" && role === "parent" && (
               <div>
                 <Label htmlFor="name">Full name</Label>
-                <Input id="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                <Input
+                  id="name"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
               </div>
             )}
             {mode === "signup" && role === "vendor" && (
               <>
                 <div>
                   <Label htmlFor="biz">Camp name</Label>
-                  <Input id="biz" required value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
+                  <Input
+                    id="biz"
+                    required
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="loc">Location</Label>
-                  <Input id="loc" required value={businessLocation} onChange={(e) => setBusinessLocation(e.target.value)} placeholder="City, area code" />
+                  <Input
+                    id="loc"
+                    required
+                    value={businessLocation}
+                    onChange={(e) => setBusinessLocation(e.target.value)}
+                    placeholder="City, area code"
+                  />
                 </div>
               </>
             )}
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
             <div>
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input
+                id="password"
+                type="password"
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
             <Button type="submit" variant="hero" size="lg" className="w-full" disabled={loading}>
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}

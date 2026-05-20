@@ -63,7 +63,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Discover and register for summer camps. Build a profile for your kids, share with classmates, and never miss a great session.",
       },
       { property: "og:title", content: "Summer Buddy Connect — summer camps for every kid" },
-      { property: "og:description", content: "Discover and register for camps with classmates and friends." },
+      {
+        property: "og:description",
+        content: "Discover and register for camps with classmates and friends.",
+      },
       { property: "og:type", content: "website" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],

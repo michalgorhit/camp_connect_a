@@ -8,7 +8,11 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { SessionDialog } from "@/components/SessionDialog";
 
@@ -42,7 +46,9 @@ export const Route = createFileRoute("/admin")({
 function AdminDashboard() {
   const [sessions, setSessions] = useState<Sess[]>([]);
   const [vendors, setVendors] = useState<Profile[]>([]);
-  const [counts, setCounts] = useState<Record<string, { interested: number; registered: number }>>({});
+  const [counts, setCounts] = useState<Record<string, { interested: number; registered: number }>>(
+    {},
+  );
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -57,37 +63,55 @@ function AdminDashboard() {
     const c: Record<string, { interested: number; registered: number }> = {};
     (regs ?? []).forEach((r: any) => {
       const x = c[r.session_id] ?? { interested: 0, registered: 0 };
-      if (r.status === "registered") x.registered++; else x.interested++;
+      if (r.status === "registered") x.registered++;
+      else x.interested++;
       c[r.session_id] = x;
     });
     setCounts(c);
 
     // Vendor profiles = anyone with vendor role
-    const { data: vroles } = await supabase.from("user_roles").select("user_id").eq("role", "vendor");
+    const { data: vroles } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "vendor");
     const ids = (vroles ?? []).map((r: any) => r.user_id);
     if (ids.length) {
-      const { data: profs } = await supabase.from("profiles").select("id, full_name, business_name").in("id", ids);
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, full_name, business_name")
+        .in("id", ids);
       setVendors((profs ?? []) as Profile[]);
     }
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const filtered = useMemo(() => {
     if (!q.trim()) return sessions;
     const t = q.trim().toLowerCase();
-    return sessions.filter((s) => s.title.toLowerCase().includes(t) || (s.location ?? "").toLowerCase().includes(t));
+    return sessions.filter(
+      (s) => s.title.toLowerCase().includes(t) || (s.location ?? "").toLowerCase().includes(t),
+    );
   }, [q, sessions]);
 
   const totals = useMemo(() => {
-    let interested = 0, registered = 0;
-    Object.values(counts).forEach((c) => { interested += c.interested; registered += c.registered; });
+    let interested = 0,
+      registered = 0;
+    Object.values(counts).forEach((c) => {
+      interested += c.interested;
+      registered += c.registered;
+    });
     return { camps: sessions.length, interested, registered };
   }, [counts, sessions]);
 
   const assignVendor = async (sessId: string, vendorId: string) => {
-    const { error } = await supabase.from("camp_sessions").update({ vendor_id: vendorId, source: "vendor" }).eq("id", sessId);
+    const { error } = await supabase
+      .from("camp_sessions")
+      .update({ vendor_id: vendorId, source: "vendor" })
+      .eq("id", sessId);
     if (error) return toast.error(error.message);
     toast.success("Vendor assigned");
     load();
@@ -119,7 +143,14 @@ function AdminDashboard() {
             <h1 className="font-display text-4xl font-bold tracking-tight">Admin</h1>
             <p className="mt-2 text-muted-foreground">Full picture across every camp.</p>
           </div>
-          <Button variant="hero" size="lg" onClick={() => { setEditing(null); setOpen(true); }}>
+          <Button
+            variant="hero"
+            size="lg"
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+          >
             <Plus className="h-5 w-5" /> New session
           </Button>
         </header>
@@ -131,10 +162,17 @@ function AdminDashboard() {
         </div>
 
         <div className="mb-4">
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by title or location" className="max-w-md" />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search by title or location"
+            className="max-w-md"
+          />
         </div>
 
-        {loading ? <p className="text-muted-foreground">Loading…</p> : (
+        {loading ? (
+          <p className="text-muted-foreground">Loading…</p>
+        ) : (
           <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-soft">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
@@ -156,25 +194,39 @@ function AdminDashboard() {
                     <tr key={s.id} className="border-t border-border/60">
                       <td className="px-4 py-3">
                         <div className="font-medium">{s.title}</div>
-                        <div className="text-xs text-muted-foreground">{s.location ?? "—"} · Ages {s.age_min ?? "?"}–{s.age_max ?? "?"} · {s.day_type}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {s.location ?? "—"} · Ages {s.age_min ?? "?"}–{s.age_max ?? "?"} ·{" "}
+                          {s.day_type}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {new Date(s.start_date).toLocaleDateString()}<br />
-                        <span className="text-xs">→ {new Date(s.end_date).toLocaleDateString()}</span>
+                        {new Date(s.start_date).toLocaleDateString()}
+                        <br />
+                        <span className="text-xs">
+                          → {new Date(s.end_date).toLocaleDateString()}
+                        </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${s.source === "community" ? "bg-accent text-accent-foreground" : s.source === "admin" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${s.source === "community" ? "bg-accent text-accent-foreground" : s.source === "admin" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}
+                        >
                           {s.source ?? "vendor"}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <Select value={s.vendor_id} onValueChange={(v) => assignVendor(s.id, v)}>
                           <SelectTrigger className="h-8 w-44 text-xs">
-                            <SelectValue placeholder={vendor?.business_name ?? vendor?.full_name ?? "Assign vendor"} />
+                            <SelectValue
+                              placeholder={
+                                vendor?.business_name ?? vendor?.full_name ?? "Assign vendor"
+                              }
+                            />
                           </SelectTrigger>
                           <SelectContent>
                             {vendors.map((v) => (
-                              <SelectItem key={v.id} value={v.id}>{v.business_name ?? v.full_name ?? v.id.slice(0, 8)}</SelectItem>
+                              <SelectItem key={v.id} value={v.id}>
+                                {v.business_name ?? v.full_name ?? v.id.slice(0, 8)}
+                              </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -192,7 +244,9 @@ function AdminDashboard() {
                         />
                       </td>
                       <td className="px-4 py-3">
-                        <Button size="sm" variant="ghost" onClick={() => remove(s.id)}><Trash2 className="h-4 w-4" /></Button>
+                        <Button size="sm" variant="ghost" onClick={() => remove(s.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </td>
                     </tr>
                   );
@@ -202,7 +256,15 @@ function AdminDashboard() {
           </div>
         )}
 
-        <SessionDialog open={open} onOpenChange={setOpen} editing={editing} onSaved={() => { setOpen(false); load(); }} />
+        <SessionDialog
+          open={open}
+          onOpenChange={setOpen}
+          editing={editing}
+          onSaved={() => {
+            setOpen(false);
+            load();
+          }}
+        />
       </main>
     </div>
   );
@@ -211,7 +273,9 @@ function AdminDashboard() {
 function Stat({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-soft">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">{icon} {label}</div>
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+        {icon} {label}
+      </div>
       <div className="mt-1 font-display text-3xl font-bold">{value}</div>
     </div>
   );

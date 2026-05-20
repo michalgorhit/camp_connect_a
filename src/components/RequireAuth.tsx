@@ -3,7 +3,13 @@ import { useAuth } from "@/lib/auth-context";
 import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 
-export function RequireAuth({ children, role }: { children: ReactNode; role?: "parent" | "vendor" | "admin" }) {
+export function RequireAuth({
+  children,
+  role,
+}: {
+  children: ReactNode;
+  role?: "parent" | "vendor" | "admin";
+}) {
   const { user, loading, rolesLoading, roles } = useAuth();
   if (loading || (user && rolesLoading)) {
     return (

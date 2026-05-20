@@ -2,7 +2,19 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Plus, School, Baby, Users, Share2, ExternalLink, Trash2, Mail, CalendarDays, Plane, X } from "lucide-react";
+import {
+  Plus,
+  School,
+  Baby,
+  Users,
+  Share2,
+  ExternalLink,
+  Trash2,
+  Mail,
+  CalendarDays,
+  Plane,
+  X,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -12,7 +24,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/parent")({
@@ -25,16 +42,39 @@ export const Route = createFileRoute("/parent")({
 });
 
 type Kid = {
-  id: string; full_name: string; grade: string | null;
-  school_id: string | null; class_id: string | null;
+  id: string;
+  full_name: string;
+  grade: string | null;
+  school_id: string | null;
+  class_id: string | null;
   share_with_class: boolean;
 };
 type School = { id: string; name: string; city: string | null };
 type Klass = { id: string; school_id: string; name: string; grade: string | null };
 type Reg = { id: string; kid_id: string; session_id: string; status: string };
-type Sess = { id: string; title: string; start_date: string; end_date: string; registration_url: string | null; location?: string | null; price_cents?: number | null };
-type Vacation = { id: string; start_date: string; end_date: string; kind: string; label: string | null };
-type ShareInvite = { id: string; invitee_email: string; accepted_at: string | null; accepted_by: string | null; token: string };
+type Sess = {
+  id: string;
+  title: string;
+  start_date: string;
+  end_date: string;
+  registration_url: string | null;
+  location?: string | null;
+  price_cents?: number | null;
+};
+type Vacation = {
+  id: string;
+  start_date: string;
+  end_date: string;
+  kind: string;
+  label: string | null;
+};
+type ShareInvite = {
+  id: string;
+  invitee_email: string;
+  accepted_at: string | null;
+  accepted_by: string | null;
+  token: string;
+};
 
 function ParentDashboard() {
   const { user } = useAuth();
@@ -77,7 +117,10 @@ function ParentDashboard() {
       setSchools((schoolsData ?? []) as School[]);
       setClasses((classesData ?? []) as Klass[]);
 
-      const { data: regsData } = await supabase.from("registrations").select("*").eq("parent_id", user.id);
+      const { data: regsData } = await supabase
+        .from("registrations")
+        .select("*")
+        .eq("parent_id", user.id);
       setRegs((regsData ?? []) as Reg[]);
 
       const sessIds = Array.from(new Set((regsData ?? []).map((r) => r.session_id)));
@@ -87,7 +130,9 @@ function ParentDashboard() {
           .from("camp_sessions")
           .select("id,title,start_date,end_date,registration_url,location,price_cents")
           .in("id", sessIds);
-        (ss ?? []).forEach((s) => { baseSessMap[s.id] = s as Sess; });
+        (ss ?? []).forEach((s) => {
+          baseSessMap[s.id] = s as Sess;
+        });
       }
       setSessMap(baseSessMap);
 
@@ -104,7 +149,10 @@ function ParentDashboard() {
           .in("class_id", myClassIds)
           .neq("parent_id", user.id);
         (classmateKids ?? []).forEach((k: any) => {
-          if (k.id) { visibleKidIds.add(k.id); nameById[k.id] = k.full_name; }
+          if (k.id) {
+            visibleKidIds.add(k.id);
+            nameById[k.id] = k.full_name;
+          }
         });
       }
 
@@ -129,7 +177,8 @@ function ParentDashboard() {
             .select("id, full_name")
             .in("id", directIds);
           (directKids ?? []).forEach((k: any) => {
-            visibleKidIds.add(k.id); nameById[k.id] = k.full_name;
+            visibleKidIds.add(k.id);
+            nameById[k.id] = k.full_name;
           });
         }
       }
@@ -144,7 +193,9 @@ function ParentDashboard() {
           .in("kid_id", ckIds);
         setClassmateRegs((cRegs ?? []).map((r: any) => ({ ...r, kid_name: nameById[r.kid_id] })));
 
-        const extraIds = (cRegs ?? []).map((r: any) => r.session_id).filter((id: string) => !baseSessMap[id]);
+        const extraIds = (cRegs ?? [])
+          .map((r: any) => r.session_id)
+          .filter((id: string) => !baseSessMap[id]);
         if (extraIds.length) {
           const { data: extra } = await supabase
             .from("camp_sessions")
@@ -152,7 +203,9 @@ function ParentDashboard() {
             .in("id", extraIds);
           setSessMap((prev) => {
             const m = { ...prev };
-            (extra ?? []).forEach((s) => { m[s.id] = s as Sess; });
+            (extra ?? []).forEach((s) => {
+              m[s.id] = s as Sess;
+            });
             return m;
           });
         }
@@ -164,14 +217,24 @@ function ParentDashboard() {
     }
   };
 
-  useEffect(() => { load(); loadVacations(); }, [user]);
+  useEffect(() => {
+    load();
+    loadVacations();
+  }, [user]);
 
   // Deep link: /parent?session=...
   useEffect(() => {
     if (!search.session) return;
     (async () => {
-      const { data } = await supabase.from("camp_sessions").select("id,title,start_date,end_date,registration_url").eq("id", search.session!).maybeSingle();
-      if (data) { setPendingSession(data as Sess); setRegisterOpen(true); }
+      const { data } = await supabase
+        .from("camp_sessions")
+        .select("id,title,start_date,end_date,registration_url")
+        .eq("id", search.session!)
+        .maybeSingle();
+      if (data) {
+        setPendingSession(data as Sess);
+        setRegisterOpen(true);
+      }
     })();
   }, [search.session]);
 
@@ -193,8 +256,16 @@ function ParentDashboard() {
 
         <section className="mb-12">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-2xl font-semibold flex items-center gap-2"><Baby className="h-5 w-5" /> My kids</h2>
-            <Button variant="hero" onClick={() => { setEditingKid(null); setKidOpen(true); }}>
+            <h2 className="font-display text-2xl font-semibold flex items-center gap-2">
+              <Baby className="h-5 w-5" /> My kids
+            </h2>
+            <Button
+              variant="hero"
+              onClick={() => {
+                setEditingKid(null);
+                setKidOpen(true);
+              }}
+            >
               <Plus className="h-4 w-4" /> Add kid
             </Button>
           </div>
@@ -208,19 +279,50 @@ function ParentDashboard() {
                 const school = schools.find((s) => s.id === k.school_id);
                 const klass = classes.find((c) => c.id === k.class_id);
                 return (
-                  <div key={k.id} className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+                  <div
+                    key={k.id}
+                    className="rounded-2xl border border-border bg-card p-5 shadow-soft"
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="font-display text-xl font-semibold">{k.full_name}</h3>
-                        {school && <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1.5"><School className="h-4 w-4" /> {school.name}{klass ? ` · ${klass.name}` : ""}</p>}
-                        {k.share_with_class && <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs text-accent-foreground"><Users className="h-3 w-3" /> Shares with class</span>}
+                        {school && (
+                          <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1.5">
+                            <School className="h-4 w-4" /> {school.name}
+                            {klass ? ` · ${klass.name}` : ""}
+                          </p>
+                        )}
+                        {k.share_with_class && (
+                          <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs text-accent-foreground">
+                            <Users className="h-3 w-3" /> Shares with class
+                          </span>
+                        )}
                       </div>
                       <div className="flex gap-1">
-                        <Button size="sm" variant="outline" onClick={() => { setShareKidId(k.id); setShareKidName(k.full_name); setShareKidClassId(k.class_id); }}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setShareKidId(k.id);
+                            setShareKidName(k.full_name);
+                            setShareKidClassId(k.class_id);
+                          }}
+                        >
                           <Share2 className="h-4 w-4" /> Manage sharing
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => { setEditingKid(k); setKidOpen(true); }}>Edit</Button>
-                        <Button size="sm" variant="ghost" onClick={() => deleteKid(k.id)}><Trash2 className="h-4 w-4" /></Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingKid(k);
+                            setKidOpen(true);
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => deleteKid(k.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -248,7 +350,11 @@ function ParentDashboard() {
               await supabase.from("parent_vacations").delete().eq("id", existing.id);
             } else {
               await supabase.from("parent_vacations").insert({
-                parent_id: user.id, start_date: start, end_date: end, kind: "travel", label: "Family travel",
+                parent_id: user.id,
+                start_date: start,
+                end_date: end,
+                kind: "travel",
+                label: "Family travel",
               });
             }
             loadVacations();
@@ -258,11 +364,16 @@ function ParentDashboard() {
         <section className="mb-12">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-2xl font-semibold">Registered camps</h2>
-            <Link to="/sessions"><Button variant="outline">Browse camps</Button></Link>
+            <Link to="/sessions">
+              <Button variant="outline">Browse camps</Button>
+            </Link>
           </div>
           {regs.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center text-muted-foreground">
-              No registrations yet. <Link to="/sessions" className="font-medium text-primary hover:underline">Find a camp →</Link>
+              No registrations yet.{" "}
+              <Link to="/sessions" className="font-medium text-primary hover:underline">
+                Find a camp →
+              </Link>
             </div>
           ) : (
             <div className="grid gap-3">
@@ -270,7 +381,15 @@ function ParentDashboard() {
                 const s = sessMap[r.session_id];
                 const k = kids.find((x) => x.id === r.kid_id);
                 if (!s) return null;
-                return <RegRow key={r.id} reg={r} session={s} kidName={k?.full_name ?? ""} onChange={load} />;
+                return (
+                  <RegRow
+                    key={r.id}
+                    reg={r}
+                    session={s}
+                    kidName={k?.full_name ?? ""}
+                    onChange={load}
+                  />
+                );
               })}
             </div>
           )}
@@ -278,18 +397,33 @@ function ParentDashboard() {
 
         {classmateRegs.length > 0 && (
           <section className="mb-12">
-            <h2 className="mb-4 font-display text-2xl font-semibold flex items-center gap-2"><Users className="h-5 w-5" /> Classmates' camps</h2>
+            <h2 className="mb-4 font-display text-2xl font-semibold flex items-center gap-2">
+              <Users className="h-5 w-5" /> Classmates' camps
+            </h2>
             <div className="grid gap-3 md:grid-cols-2">
               {classmateRegs.map((r) => {
                 const s = sessMap[r.session_id];
                 if (!s) return null;
                 return (
-                  <div key={r.id} className="rounded-2xl border border-border bg-card p-4 shadow-soft">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">{r.kid_name}</p>
+                  <div
+                    key={r.id}
+                    className="rounded-2xl border border-border bg-card p-4 shadow-soft"
+                  >
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {r.kid_name}
+                    </p>
                     <p className="font-display text-lg font-semibold">{s.title}</p>
-                    <p className="text-sm text-muted-foreground">{new Date(s.start_date).toLocaleDateString()} – {new Date(s.end_date).toLocaleDateString()}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(s.start_date).toLocaleDateString()} –{" "}
+                      {new Date(s.end_date).toLocaleDateString()}
+                    </p>
                     {s.registration_url && (
-                      <a href={s.registration_url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+                      <a
+                        href={s.registration_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                      >
                         Visit camp <ExternalLink className="h-3 w-3" />
                       </a>
                     )}
@@ -301,20 +435,34 @@ function ParentDashboard() {
         )}
 
         <KidDialog
-          open={kidOpen} onOpenChange={setKidOpen} editing={editingKid}
-          schools={schools} classes={classes}
-          onSaved={() => { setKidOpen(false); load(); }}
+          open={kidOpen}
+          onOpenChange={setKidOpen}
+          editing={editingKid}
+          schools={schools}
+          classes={classes}
+          onSaved={() => {
+            setKidOpen(false);
+            load();
+          }}
         />
 
         <RegisterDialog
-          open={registerOpen} onOpenChange={setRegisterOpen}
-          session={pendingSession} kids={kids}
-          onSaved={() => { setRegisterOpen(false); setPendingSession(null); load(); }}
+          open={registerOpen}
+          onOpenChange={setRegisterOpen}
+          session={pendingSession}
+          kids={kids}
+          onSaved={() => {
+            setRegisterOpen(false);
+            setPendingSession(null);
+            load();
+          }}
         />
 
         <KidShareDialog
           open={!!shareKidId}
-          onOpenChange={(v: boolean) => { if (!v) setShareKidId(null); }}
+          onOpenChange={(v: boolean) => {
+            if (!v) setShareKidId(null);
+          }}
           kidId={shareKidId}
           kidName={shareKidName}
           classId={shareKidClassId}
@@ -325,14 +473,27 @@ function ParentDashboard() {
         <VacationDialog
           open={vacOpen}
           onOpenChange={setVacOpen}
-          onSaved={() => { setVacOpen(false); loadVacations(); }}
+          onSaved={() => {
+            setVacOpen(false);
+            loadVacations();
+          }}
         />
       </main>
     </div>
   );
 }
 
-function RegRow({ reg, session, kidName, onChange }: { reg: Reg; session: Sess; kidName: string; onChange: () => void }) {
+function RegRow({
+  reg,
+  session,
+  kidName,
+  onChange,
+}: {
+  reg: Reg;
+  session: Sess;
+  kidName: string;
+  onChange: () => void;
+}) {
   const remove = async () => {
     if (!confirm("Remove registration?")) return;
     await supabase.from("registrations").delete().eq("id", reg.id);
@@ -352,12 +513,17 @@ function RegRow({ reg, session, kidName, onChange }: { reg: Reg; session: Sess; 
       <div>
         <div className="flex items-center gap-2">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">{kidName}</p>
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${reg.status === "registered" ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}>
+          <span
+            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${reg.status === "registered" ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}
+          >
             {reg.status}
           </span>
         </div>
         <h3 className="font-display text-lg font-semibold">{session.title}</h3>
-        <p className="text-sm text-muted-foreground">{new Date(session.start_date).toLocaleDateString()} – {new Date(session.end_date).toLocaleDateString()}</p>
+        <p className="text-sm text-muted-foreground">
+          {new Date(session.start_date).toLocaleDateString()} –{" "}
+          {new Date(session.end_date).toLocaleDateString()}
+        </p>
       </div>
       <div className="flex flex-wrap gap-2">
         <div className="inline-flex rounded-lg bg-muted p-1">
@@ -378,18 +544,34 @@ function RegRow({ reg, session, kidName, onChange }: { reg: Reg; session: Sess; 
         </div>
         {session.registration_url && reg.status !== "registered" && (
           <a href={session.registration_url} target="_blank" rel="noreferrer">
-            <Button size="sm" variant="hero">Complete <ExternalLink className="h-3.5 w-3.5" /></Button>
+            <Button size="sm" variant="hero">
+              Complete <ExternalLink className="h-3.5 w-3.5" />
+            </Button>
           </a>
         )}
-        <Button size="sm" variant="ghost" onClick={remove}><Trash2 className="h-4 w-4" /></Button>
+        <Button size="sm" variant="ghost" onClick={remove}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
     </article>
   );
 }
 
 function KidDialog({
-  open, onOpenChange, editing, schools, classes, onSaved,
-}: { open: boolean; onOpenChange: (v: boolean) => void; editing: Kid | null; schools: School[]; classes: Klass[]; onSaved: () => void }) {
+  open,
+  onOpenChange,
+  editing,
+  schools,
+  classes,
+  onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  editing: Kid | null;
+  schools: School[];
+  classes: Klass[];
+  onSaved: () => void;
+}) {
   const { user } = useAuth();
   const [name, setName] = useState("");
   const [grade, setGrade] = useState("");
@@ -407,12 +589,19 @@ function KidDialog({
       setClassName(classes.find((c) => c.id === editing.class_id)?.name ?? "");
       setShareClass(editing.share_with_class);
     } else {
-      setName(""); setGrade(""); setSchoolName(""); setClassName(""); setShareClass(false);
+      setName("");
+      setGrade("");
+      setSchoolName("");
+      setClassName("");
+      setShareClass(false);
     }
   }, [open, editing]);
 
   const schoolMatches = useMemo(
-    () => schools.filter((s) => schoolName && s.name.toLowerCase().includes(schoolName.toLowerCase())).slice(0, 5),
+    () =>
+      schools
+        .filter((s) => schoolName && s.name.toLowerCase().includes(schoolName.toLowerCase()))
+        .slice(0, 5),
     [schools, schoolName],
   );
 
@@ -424,20 +613,33 @@ function KidDialog({
       // Resolve / create school
       let schoolId: string | null = null;
       if (schoolName.trim()) {
-        const existing = schools.find((s) => s.name.toLowerCase() === schoolName.trim().toLowerCase());
+        const existing = schools.find(
+          (s) => s.name.toLowerCase() === schoolName.trim().toLowerCase(),
+        );
         if (existing) schoolId = existing.id;
         else {
-          const { data, error } = await supabase.from("schools").insert({ name: schoolName.trim(), created_by: user.id }).select().single();
+          const { data, error } = await supabase
+            .from("schools")
+            .insert({ name: schoolName.trim(), created_by: user.id })
+            .select()
+            .single();
           if (error) throw error;
           schoolId = data.id;
         }
       }
       let classId: string | null = null;
       if (schoolId && className.trim()) {
-        const existing = classes.find((c) => c.school_id === schoolId && c.name.toLowerCase() === className.trim().toLowerCase());
+        const existing = classes.find(
+          (c) =>
+            c.school_id === schoolId && c.name.toLowerCase() === className.trim().toLowerCase(),
+        );
         if (existing) classId = existing.id;
         else {
-          const { data, error } = await supabase.from("classes").insert({ school_id: schoolId, name: className.trim(), created_by: user.id }).select().single();
+          const { data, error } = await supabase
+            .from("classes")
+            .insert({ school_id: schoolId, name: className.trim(), created_by: user.id })
+            .select()
+            .single();
           if (error) throw error;
           classId = data.id;
         }
@@ -468,10 +670,15 @@ function KidDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl">{editing ? "Edit kid" : "Add a kid"}</DialogTitle>
+          <DialogTitle className="font-display text-2xl">
+            {editing ? "Edit kid" : "Add a kid"}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
-          <div><Label>Full name</Label><Input required value={name} onChange={(e) => setName(e.target.value)} /></div>
+          <div>
+            <Label>Full name</Label>
+            <Input required value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
           <div>
             <Label>Grade level</Label>
             <select
@@ -480,35 +687,80 @@ function KidDialog({
               onChange={(e) => setGrade(e.target.value)}
             >
               <option value="">Select a grade…</option>
-              {["Pre-K", "Kindergarten", "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"].map((g) => (
-                <option key={g} value={g}>{g}</option>
+              {[
+                "Pre-K",
+                "Kindergarten",
+                "Grade 1",
+                "Grade 2",
+                "Grade 3",
+                "Grade 4",
+                "Grade 5",
+                "Grade 6",
+                "Grade 7",
+                "Grade 8",
+                "Grade 9",
+                "Grade 10",
+                "Grade 11",
+                "Grade 12",
+              ].map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
               ))}
             </select>
           </div>
           <div className="relative">
             <Label>School</Label>
-            <Input value={schoolName} onChange={(e) => setSchoolName(e.target.value)} placeholder="Type to search or create" />
+            <Input
+              value={schoolName}
+              onChange={(e) => setSchoolName(e.target.value)}
+              placeholder="Type to search or create"
+            />
             {schoolMatches.length > 0 && schoolName !== schoolMatches[0]?.name && (
               <div className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-border bg-popover p-1 text-sm shadow-soft">
                 {schoolMatches.map((s) => (
-                  <button type="button" key={s.id} onClick={() => setSchoolName(s.name)} className="block w-full rounded px-2 py-1.5 text-left hover:bg-muted">
-                    {s.name}{s.city ? ` · ${s.city}` : ""}
+                  <button
+                    type="button"
+                    key={s.id}
+                    onClick={() => setSchoolName(s.name)}
+                    className="block w-full rounded px-2 py-1.5 text-left hover:bg-muted"
+                  >
+                    {s.name}
+                    {s.city ? ` · ${s.city}` : ""}
                   </button>
                 ))}
               </div>
             )}
           </div>
-          <div><Label>Class</Label><Input value={className} onChange={(e) => setClassName(e.target.value)} placeholder="e.g. Mrs. Chen Grade 3" /></div>
+          <div>
+            <Label>Class</Label>
+            <Input
+              value={className}
+              onChange={(e) => setClassName(e.target.value)}
+              placeholder="e.g. Mrs. Chen Grade 3"
+            />
+          </div>
           <label className="flex items-start gap-3 rounded-lg bg-muted p-3">
-            <Checkbox checked={shareClass} onCheckedChange={(v) => setShareClass(!!v)} className="mt-0.5" />
+            <Checkbox
+              checked={shareClass}
+              onCheckedChange={(v) => setShareClass(!!v)}
+              className="mt-0.5"
+            />
             <span className="text-sm">
               <span className="font-medium">Share camp registrations with classmates</span>
-              <span className="block text-muted-foreground">Other parents in the same class can see which camps {name || "your kid"} has signed up for.</span>
+              <span className="block text-muted-foreground">
+                Other parents in the same class can see which camps {name || "your kid"} has signed
+                up for.
+              </span>
             </span>
           </label>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" variant="hero" disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="hero" disabled={saving}>
+              {saving ? "Saving…" : "Save"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -517,15 +769,28 @@ function KidDialog({
 }
 
 function RegisterDialog({
-  open, onOpenChange, session, kids, onSaved,
-}: { open: boolean; onOpenChange: (v: boolean) => void; session: Sess | null; kids: Kid[]; onSaved: () => void }) {
+  open,
+  onOpenChange,
+  session,
+  kids,
+  onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  session: Sess | null;
+  kids: Kid[];
+  onSaved: () => void;
+}) {
   const { user } = useAuth();
   const [kidId, setKidId] = useState<string>("");
   const [status, setStatus] = useState<"interested" | "registered">("interested");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) { setKidId(kids[0]?.id ?? ""); setStatus("interested"); }
+    if (open) {
+      setKidId(kids[0]?.id ?? "");
+      setStatus("interested");
+    }
   }, [open, kids]);
 
   if (!session) return null;
@@ -534,9 +799,15 @@ function RegisterDialog({
     e.preventDefault();
     if (!user || !kidId) return;
     setSaving(true);
-    const { error } = await supabase.from("registrations").upsert({
-      kid_id: kidId, session_id: session.id, parent_id: user.id, status,
-    }, { onConflict: "kid_id,session_id" });
+    const { error } = await supabase.from("registrations").upsert(
+      {
+        kid_id: kidId,
+        session_id: session.id,
+        parent_id: user.id,
+        status,
+      },
+      { onConflict: "kid_id,session_id" },
+    );
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success(status === "registered" ? "Marked as registered 🎉" : "Saved as interested");
@@ -547,7 +818,9 @@ function RegisterDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl">Add to your camps: {session.title}</DialogTitle>
+          <DialogTitle className="font-display text-2xl">
+            Add to your camps: {session.title}
+          </DialogTitle>
         </DialogHeader>
         {kids.length === 0 ? (
           <p className="text-muted-foreground">Add a kid first, then come back to register.</p>
@@ -555,19 +828,33 @@ function RegisterDialog({
           <form onSubmit={submit} className="space-y-3">
             <div>
               <Label>Which kid?</Label>
-              <select className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm" value={kidId} onChange={(e) => setKidId(e.target.value)}>
-                {kids.map((k) => <option key={k.id} value={k.id}>{k.full_name}</option>)}
+              <select
+                className="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                value={kidId}
+                onChange={(e) => setKidId(e.target.value)}
+              >
+                {kids.map((k) => (
+                  <option key={k.id} value={k.id}>
+                    {k.full_name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
               <Label>Status</Label>
               <div className="mt-1 grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
-                <button type="button" onClick={() => setStatus("interested")}
-                  className={`rounded-md py-2 text-sm font-medium transition ${status === "interested" ? "bg-card shadow-soft" : "text-muted-foreground"}`}>
+                <button
+                  type="button"
+                  onClick={() => setStatus("interested")}
+                  className={`rounded-md py-2 text-sm font-medium transition ${status === "interested" ? "bg-card shadow-soft" : "text-muted-foreground"}`}
+                >
                   Interested
                 </button>
-                <button type="button" onClick={() => setStatus("registered")}
-                  className={`rounded-md py-2 text-sm font-medium transition ${status === "registered" ? "bg-card shadow-soft" : "text-muted-foreground"}`}>
+                <button
+                  type="button"
+                  onClick={() => setStatus("registered")}
+                  className={`rounded-md py-2 text-sm font-medium transition ${status === "registered" ? "bg-card shadow-soft" : "text-muted-foreground"}`}
+                >
                   Registered
                 </button>
               </div>
@@ -583,7 +870,9 @@ function RegisterDialog({
               </p>
             )}
             <DialogFooter>
-              <Button type="submit" variant="hero" disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+              <Button type="submit" variant="hero" disabled={saving}>
+                {saving ? "Saving…" : "Save"}
+              </Button>
             </DialogFooter>
           </form>
         )}
@@ -593,7 +882,13 @@ function RegisterDialog({
 }
 
 function KidShareDialog({
-  open, onOpenChange, kidId, kidName, classId, klass, onChanged,
+  open,
+  onOpenChange,
+  kidId,
+  kidName,
+  classId,
+  klass,
+  onChanged,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -621,7 +916,11 @@ function KidShareDialog({
         .eq("inviter_id", user.id)
         .order("created_at", { ascending: false }),
       classId
-        ? supabase.from("kids").select("id,full_name,grade,school_id,class_id,share_with_class,parent_id").eq("class_id", classId).neq("parent_id", user.id)
+        ? supabase
+            .from("kids")
+            .select("id,full_name,grade,school_id,class_id,share_with_class,parent_id")
+            .eq("class_id", classId)
+            .neq("parent_id", user.id)
         : Promise.resolve({ data: [] }),
     ]);
     setShareWithClass(!!kid?.share_with_class);
@@ -636,7 +935,10 @@ function KidShareDialog({
   const toggleClassShare = async (checked: boolean) => {
     if (!kidId) return;
     setShareWithClass(checked);
-    const { error } = await supabase.from("kids").update({ share_with_class: checked }).eq("id", kidId);
+    const { error } = await supabase
+      .from("kids")
+      .update({ share_with_class: checked })
+      .eq("id", kidId);
     if (error) {
       toast.error(error.message);
       setShareWithClass(!checked);
@@ -680,19 +982,34 @@ function KidShareDialog({
         <div className="space-y-4">
           <section className="rounded-xl border border-border bg-muted/40 p-3">
             <label className="flex items-start gap-3">
-              <Checkbox checked={shareWithClass} onCheckedChange={(v) => toggleClassShare(!!v)} className="mt-0.5" />
+              <Checkbox
+                checked={shareWithClass}
+                onCheckedChange={(v) => toggleClassShare(!!v)}
+                className="mt-0.5"
+              />
               <span className="text-sm">
                 <span className="font-medium">Share with {klass?.name ?? "class"}</span>
-                <span className="block text-muted-foreground">Parents with kids in this class can see {kidName}'s camp activities.</span>
+                <span className="block text-muted-foreground">
+                  Parents with kids in this class can see {kidName}'s camp activities.
+                </span>
               </span>
             </label>
             {shareWithClass && (
               <div className="mt-3 rounded-lg bg-card p-3 text-sm">
                 <p className="font-medium">Class</p>
-                <p className="text-muted-foreground">{klass ? `${klass.name}${klass.grade ? ` · ${klass.grade}` : ""}` : "No class selected"}</p>
+                <p className="text-muted-foreground">
+                  {klass
+                    ? `${klass.name}${klass.grade ? ` · ${klass.grade}` : ""}`
+                    : "No class selected"}
+                </p>
                 {classKids.length > 0 && (
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Visible to classmates including {classKids.slice(0, 4).map((k) => k.full_name).join(", ")}{classKids.length > 4 ? ` +${classKids.length - 4} more` : ""}.
+                    Visible to classmates including{" "}
+                    {classKids
+                      .slice(0, 4)
+                      .map((k) => k.full_name)
+                      .join(", ")}
+                    {classKids.length > 4 ? ` +${classKids.length - 4} more` : ""}.
                   </p>
                 )}
               </div>
@@ -702,20 +1019,41 @@ function KidShareDialog({
           <section>
             <h3 className="mb-2 text-sm font-semibold">Direct parent shares</h3>
             {invites.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-border p-3 text-sm text-muted-foreground">No direct parent invites yet.</p>
+              <p className="rounded-xl border border-dashed border-border p-3 text-sm text-muted-foreground">
+                No direct parent invites yet.
+              </p>
             ) : (
               <div className="space-y-2">
                 {invites.map((invite) => (
-                  <div key={invite.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card p-3 text-sm">
+                  <div
+                    key={invite.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card p-3 text-sm"
+                  >
                     <div>
                       <p className="font-medium">{invite.invitee_email}</p>
-                      <p className="text-xs text-muted-foreground">{invite.accepted_at ? "Accepted" : "Pending"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {invite.accepted_at ? "Accepted" : "Pending"}
+                      </p>
                     </div>
                     <div className="flex gap-2">
-                      <Button type="button" size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(`${window.location.origin}/parent?invite=${invite.token}`).then(() => toast.success("Invite link copied"))}>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          navigator.clipboard
+                            .writeText(`${window.location.origin}/parent?invite=${invite.token}`)
+                            .then(() => toast.success("Invite link copied"))
+                        }
+                      >
                         Copy link
                       </Button>
-                      <Button type="button" size="sm" variant="ghost" onClick={() => revokeInvite(invite.id)}>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => revokeInvite(invite.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -726,14 +1064,24 @@ function KidShareDialog({
           </section>
 
           <form onSubmit={submit} className="space-y-3 rounded-xl border border-border p-3">
-          <div>
-            <Label>Friend's parent email</Label>
-            <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="parent@example.com" />
-            <p className="mt-1 text-xs text-muted-foreground">They'll see all of {kidName}'s camp activities through your invite link.</p>
-          </div>
-          <DialogFooter>
-            <Button type="submit" variant="hero" disabled={sending}><Mail className="h-4 w-4" /> Create invite</Button>
-          </DialogFooter>
+            <div>
+              <Label>Friend's parent email</Label>
+              <Input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="parent@example.com"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                They'll see all of {kidName}'s camp activities through your invite link.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button type="submit" variant="hero" disabled={sending}>
+                <Mail className="h-4 w-4" /> Create invite
+              </Button>
+            </DialogFooter>
           </form>
         </div>
       </DialogContent>
@@ -768,7 +1116,14 @@ function rangesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: strin
 }
 
 function SummerCalendar({
-  regs, sessMap, kids, classmateRegs, vacations, onAdd, onDeleteVacation, onQuickToggleWeek,
+  regs,
+  sessMap,
+  kids,
+  classmateRegs,
+  vacations,
+  onAdd,
+  onDeleteVacation,
+  onQuickToggleWeek,
 }: {
   regs: Reg[];
   sessMap: Record<string, Sess>;
@@ -791,7 +1146,8 @@ function SummerCalendar({
         </Button>
       </div>
       <p className="mb-4 text-sm text-muted-foreground">
-        Tap a week to mark it as a travel week (no camp needed). Use “Add vacation” for longer trips. Tap “Friends this week” to see what classmates and shared friends are up to.
+        Tap a week to mark it as a travel week (no camp needed). Use “Add vacation” for longer
+        trips. Tap “Friends this week” to see what classmates and shared friends are up to.
       </p>
 
       <div className="space-y-2">
@@ -804,8 +1160,12 @@ function SummerCalendar({
             const s = sessMap[r.session_id];
             return s && rangesOverlap(s.start_date, s.end_date, w.start, w.end);
           });
-          const vacs = vacations.filter((v) => rangesOverlap(v.start_date, v.end_date, w.start, w.end));
-          const isFullWeekTravel = vacs.some((v) => v.start_date === w.start && v.end_date === w.end);
+          const vacs = vacations.filter((v) =>
+            rangesOverlap(v.start_date, v.end_date, w.start, w.end),
+          );
+          const isFullWeekTravel = vacs.some(
+            (v) => v.start_date === w.start && v.end_date === w.end,
+          );
           const onVacation = vacs.length > 0;
           const isOpen = openWeek === w.start;
 
@@ -816,8 +1176,8 @@ function SummerCalendar({
                 onVacation
                   ? "border-sun bg-sun/15"
                   : weekRegs.length > 0
-                  ? "border-primary/40 bg-card"
-                  : "border-border bg-card"
+                    ? "border-primary/40 bg-card"
+                    : "border-border bg-card"
               }`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -838,7 +1198,9 @@ function SummerCalendar({
                         const k = kids.find((x) => x.id === r.kid_id);
                         return (
                           <li key={r.id} className="flex items-center gap-2">
-                            <span className={`h-1.5 w-1.5 rounded-full ${r.status === "registered" ? "bg-primary" : "bg-accent-foreground/60"}`} />
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${r.status === "registered" ? "bg-primary" : "bg-accent-foreground/60"}`}
+                            />
                             <span className="font-medium">{k?.full_name ?? "Kid"}</span>
                             <span className="text-muted-foreground">· {s.title}</span>
                           </li>
@@ -852,9 +1214,15 @@ function SummerCalendar({
                   {vacs.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {vacs.map((v) => (
-                        <span key={v.id} className="inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 text-[11px] text-muted-foreground border border-border">
+                        <span
+                          key={v.id}
+                          className="inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 text-[11px] text-muted-foreground border border-border"
+                        >
                           {v.label || (v.kind === "vacation" ? "Vacation" : "Travel")}
-                          <button onClick={() => onDeleteVacation(v.id)} className="ml-0.5 text-muted-foreground hover:text-destructive">
+                          <button
+                            onClick={() => onDeleteVacation(v.id)}
+                            className="ml-0.5 text-muted-foreground hover:text-destructive"
+                          >
                             <X className="h-3 w-3" />
                           </button>
                         </span>
@@ -875,23 +1243,41 @@ function SummerCalendar({
                     {isOpen && (
                       <div className="mt-2 rounded-xl border border-border bg-background/60 p-3">
                         {weekFriends.length === 0 ? (
-                          <p className="text-xs text-muted-foreground">No friends have shared activities this week yet.</p>
+                          <p className="text-xs text-muted-foreground">
+                            No friends have shared activities this week yet.
+                          </p>
                         ) : (
                           <ul className="space-y-1.5 text-sm">
                             {weekFriends.map((r) => {
                               const s = sessMap[r.session_id];
                               const withMe = regs.some((mine) => mine.session_id === r.session_id);
-                              const price = s?.price_cents != null ? `$${(s.price_cents / 100).toFixed(0)}` : null;
+                              const price =
+                                s?.price_cents != null
+                                  ? `$${(s.price_cents / 100).toFixed(0)}`
+                                  : null;
                               return (
-                                <li key={r.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                  <span className={`h-1.5 w-1.5 rounded-full ${r.status === "registered" ? "bg-primary" : "bg-accent-foreground/60"}`} />
+                                <li
+                                  key={r.id}
+                                  className="flex flex-wrap items-center gap-x-2 gap-y-1"
+                                >
+                                  <span
+                                    className={`h-1.5 w-1.5 rounded-full ${r.status === "registered" ? "bg-primary" : "bg-accent-foreground/60"}`}
+                                  />
                                   <span className="font-medium">{r.kid_name ?? "Friend"}</span>
-                                  <span className="text-muted-foreground">· {s?.title ?? "Camp"}</span>
-                                  {price && <span className="text-xs text-muted-foreground">· {price}</span>}
-                                  {withMe && (
-                                    <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">With me</span>
+                                  <span className="text-muted-foreground">
+                                    · {s?.title ?? "Camp"}
+                                  </span>
+                                  {price && (
+                                    <span className="text-xs text-muted-foreground">· {price}</span>
                                   )}
-                                  <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">{r.status}</span>
+                                  {withMe && (
+                                    <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                                      With me
+                                    </span>
+                                  )}
+                                  <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">
+                                    {r.status}
+                                  </span>
                                 </li>
                               );
                             })}
@@ -919,8 +1305,14 @@ function SummerCalendar({
 }
 
 function VacationDialog({
-  open, onOpenChange, onSaved,
-}: { open: boolean; onOpenChange: (v: boolean) => void; onSaved: () => void }) {
+  open,
+  onOpenChange,
+  onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onSaved: () => void;
+}) {
   const { user } = useAuth();
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
@@ -929,16 +1321,28 @@ function VacationDialog({
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!open) { setStart(""); setEnd(""); setKind("vacation"); setLabel(""); }
+    if (!open) {
+      setStart("");
+      setEnd("");
+      setKind("vacation");
+      setLabel("");
+    }
   }, [open]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    if (start > end) { toast.error("End date must be after start date"); return; }
+    if (start > end) {
+      toast.error("End date must be after start date");
+      return;
+    }
     setSaving(true);
     const { error } = await supabase.from("parent_vacations").insert({
-      parent_id: user.id, start_date: start, end_date: end, kind, label: label || null,
+      parent_id: user.id,
+      start_date: start,
+      end_date: end,
+      kind,
+      label: label || null,
     });
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -954,23 +1358,51 @@ function VacationDialog({
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
-            <button type="button" onClick={() => setKind("vacation")}
-              className={`rounded-md py-2 text-sm font-medium transition ${kind === "vacation" ? "bg-card shadow-soft" : "text-muted-foreground"}`}>
+            <button
+              type="button"
+              onClick={() => setKind("vacation")}
+              className={`rounded-md py-2 text-sm font-medium transition ${kind === "vacation" ? "bg-card shadow-soft" : "text-muted-foreground"}`}
+            >
               Family vacation
             </button>
-            <button type="button" onClick={() => setKind("travel")}
-              className={`rounded-md py-2 text-sm font-medium transition ${kind === "travel" ? "bg-card shadow-soft" : "text-muted-foreground"}`}>
+            <button
+              type="button"
+              onClick={() => setKind("travel")}
+              className={`rounded-md py-2 text-sm font-medium transition ${kind === "travel" ? "bg-card shadow-soft" : "text-muted-foreground"}`}
+            >
               Travel week
             </button>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Start</Label><Input type="date" required value={start} onChange={(e) => setStart(e.target.value)} /></div>
-            <div><Label>End</Label><Input type="date" required value={end} onChange={(e) => setEnd(e.target.value)} /></div>
+            <div>
+              <Label>Start</Label>
+              <Input
+                type="date"
+                required
+                value={start}
+                onChange={(e) => setStart(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>End</Label>
+              <Input type="date" required value={end} onChange={(e) => setEnd(e.target.value)} />
+            </div>
           </div>
-          <div><Label>Label (optional)</Label><Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Beach trip" /></div>
+          <div>
+            <Label>Label (optional)</Label>
+            <Input
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder="e.g. Beach trip"
+            />
+          </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" variant="hero" disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="hero" disabled={saving}>
+              {saving ? "Saving…" : "Save"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

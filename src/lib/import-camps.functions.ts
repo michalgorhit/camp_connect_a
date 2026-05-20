@@ -68,7 +68,8 @@ export const importCampsFromUrl = createServerFn({ method: "POST" })
     if (!aiRes.ok) {
       const body = await aiRes.text().catch(() => "");
       if (aiRes.status === 429) throw new Error("AI rate limit hit — try again in a moment.");
-      if (aiRes.status === 402) throw new Error("AI credits exhausted. Add credits in workspace settings.");
+      if (aiRes.status === 402)
+        throw new Error("AI credits exhausted. Add credits in workspace settings.");
       throw new Error(`AI extraction failed (${aiRes.status}): ${body.slice(0, 200)}`);
     }
 

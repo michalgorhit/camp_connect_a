@@ -24,7 +24,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [rolesLoading, setRolesLoading] = useState(true);
 
   const loadRoles = async (uid: string | undefined) => {
-    if (!uid) { setRoles([]); setRolesLoading(false); return; }
+    if (!uid) {
+      setRoles([]);
+      setRolesLoading(false);
+      return;
+    }
     setRolesLoading(true);
     const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid);
     setRoles((data ?? []).map((r) => r.role as AppRole));

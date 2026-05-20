@@ -4,7 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
 
 @theme inline {
   --font-display: "Fraunces", ui-serif, Georgia, serif;
@@ -116,20 +116,33 @@
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
+  * {
+    border-color: var(--color-border);
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     font-feature-settings: "ss01", "cv11";
   }
-  h1, h2, h3, .font-display {
+  h1,
+  h2,
+  h3,
+  .font-display {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
 }
 
-@utility bg-gradient-sun { background-image: var(--gradient-sun); }
-@utility bg-gradient-meadow { background-image: var(--gradient-meadow); }
-@utility shadow-soft { box-shadow: var(--shadow-soft); }
-@utility shadow-pop { box-shadow: var(--shadow-pop); }
+@utility bg-gradient-sun {
+  background-image: var(--gradient-sun);
+}
+@utility bg-gradient-meadow {
+  background-image: var(--gradient-meadow);
+}
+@utility shadow-soft {
+  box-shadow: var(--shadow-soft);
+}
+@utility shadow-pop {
+  box-shadow: var(--shadow-pop);
+}

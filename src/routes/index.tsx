@@ -25,8 +25,8 @@ function Index() {
                 The summer your kids will <em className="italic text-primary">never forget</em>.
               </h1>
               <p className="mt-5 max-w-lg text-lg text-muted-foreground">
-                Discover great camps, register in seconds, and bring along their classmates and friends —
-                because summer is better with the whole crew.
+                Discover great camps, register in seconds, and bring along their classmates and
+                friends — because summer is better with the whole crew.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link to="/auth" search={{ mode: "signup", role: "parent" } as never}>
@@ -35,7 +35,9 @@ function Index() {
                   </Button>
                 </Link>
                 <Link to="/auth" search={{ mode: "signup", role: "vendor" } as never}>
-                  <Button variant="sun" size="xl">List my camp</Button>
+                  <Button variant="sun" size="xl">
+                    List my camp
+                  </Button>
                 </Link>
               </div>
               <p className="mt-4 text-sm text-muted-foreground">
@@ -81,13 +83,18 @@ function Index() {
           <div className="rounded-3xl bg-primary p-10 text-primary-foreground shadow-pop md:p-14">
             <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
               <div>
-                <h2 className="font-display text-3xl font-semibold md:text-4xl">Run a camp? Reach the right families.</h2>
+                <h2 className="font-display text-3xl font-semibold md:text-4xl">
+                  Run a camp? Reach the right families.
+                </h2>
                 <p className="mt-2 max-w-md text-primary-foreground/80">
-                  Publish your sessions in minutes. We send qualified parents your way — they register on your site.
+                  Publish your sessions in minutes. We send qualified parents your way — they
+                  register on your site.
                 </p>
               </div>
               <Link to="/auth" search={{ mode: "signup", role: "vendor" } as never}>
-                <Button variant="sun" size="xl">Become a vendor</Button>
+                <Button variant="sun" size="xl">
+                  Become a vendor
+                </Button>
               </Link>
             </div>
           </div>
@@ -103,10 +110,20 @@ function Index() {
   );
 }
 
-function FeatureCard({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
+function FeatureCard({
+  icon,
+  title,
+  body,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+}) {
   return (
     <div className="rounded-2xl border border-border bg-card p-6 shadow-soft transition hover:-translate-y-0.5 hover:shadow-pop">
-      <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-accent-foreground">{icon}</div>
+      <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-accent-foreground">
+        {icon}
+      </div>
       <h3 className="mt-4 font-display text-xl font-semibold">{title}</h3>
       <p className="mt-1 text-sm text-muted-foreground">{body}</p>
     </div>

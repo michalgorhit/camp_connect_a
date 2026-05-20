@@ -17,20 +17,31 @@ export function SiteHeader() {
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-sun shadow-soft">
             <Sun className="h-5 w-5 text-sun-foreground" strokeWidth={2.5} />
           </span>
-          <span className="font-display text-xl font-bold tracking-tight">Summer Buddy Connect</span>
+          <span className="font-display text-xl font-bold tracking-tight">
+            Summer Buddy Connect
+          </span>
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
-          <Link to="/sessions" className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground">
+          <Link
+            to="/sessions"
+            className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
             Browse camps
           </Link>
           {user && (
-            <Link to={dashHref} className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground">
+            <Link
+              to={dashHref}
+              className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+            >
               Dashboard
             </Link>
           )}
           {isAdmin && (
-            <Link to="/admin" className="rounded-lg px-3 py-2 text-sm font-medium text-primary hover:text-primary">
+            <Link
+              to="/admin"
+              className="rounded-lg px-3 py-2 text-sm font-medium text-primary hover:text-primary"
+            >
               Admin
             </Link>
           )}
@@ -53,16 +64,29 @@ export function SiteHeader() {
                   My camps
                 </Button>
               </Link>
-              <Button variant="outline" size="sm" onClick={async () => { await signOut(); navigate({ to: "/" }); }}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  await signOut();
+                  navigate({ to: "/" });
+                }}
+              >
                 <LogOut className="h-4 w-4" />
                 <span className="hidden sm:inline">Sign out</span>
               </Button>
             </>
           ) : (
             <>
-              <Link to="/auth"><Button variant="ghost" size="sm">Sign in</Button></Link>
+              <Link to="/auth">
+                <Button variant="ghost" size="sm">
+                  Sign in
+                </Button>
+              </Link>
               <Link to="/auth" search={{ mode: "signup" } as never}>
-                <Button variant="hero" size="sm">Get started</Button>
+                <Button variant="hero" size="sm">
+                  Get started
+                </Button>
               </Link>
             </>
           )}
