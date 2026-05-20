@@ -4,7 +4,6 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Sun, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,19 +91,28 @@ function AuthPage() {
   const oauth = async (provider: "google" | "apple") => {
     setLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: window.location.origin + "/auth?role=" + role,
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: window.location.origin + "/auth?role=" + role,
+        },
       });
-      if (result.error) {
-        toast.error(result.error.message ?? "Sign-in failed");
+      if (error) {
+        toast.error(error.message ?? "Sign-in failed");
         return;
       }
-      if (result.redirected) return;
+      // If supabase returns a redirect URL, navigate there.
+      if (data?.url) {
+        window.location.assign(data.url);
+        return;
+      }
       // session set; ensure role
-      const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        await ensureRole(data.user.id, role);
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        await ensureRole(userData.user.id, role);
         await refreshRoles();
+        // navigate after successful oauth (if not redirected)
+        navigate({ to: role === "vendor" ? "/vendor" : "/parent" });
       }
     } catch (e: any) {
       toast.error(e.message ?? "OAuth failed");
